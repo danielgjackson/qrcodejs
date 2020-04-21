@@ -281,7 +281,7 @@ class Matrix {
         if (x < 0 || y < 0 || x >= this.dimension || y >= this.dimension) return;
         const index = y * this.dimension + x;
         this.buffer[index] = value;
-        if (identity) this.identity[index] = identity;
+        if (typeof identity !== 'undefined') this.identity[index] = identity;
     }
 
     getModule(x, y) {
