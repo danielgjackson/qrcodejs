@@ -2,7 +2,7 @@
   "name": "qrcodejs",
   "version": "0.0.0",
   "description": "Javascript QR Code generator.",
-  "main": "index.js",
+  "main": "qrcode.mjs",
   "type": "module",
   "scripts": {
     "start": "node --experimental-modules demo.js",

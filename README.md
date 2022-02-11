@@ -2,3 +2,4 @@
 
 Javascript QR Code generator.
 
+* [Demo site](https://danielgjackson.github.io/qrcodejs)

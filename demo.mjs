@@ -1,4 +1,4 @@
-import QrCode from './index.js';
+import QrCode from './qrcode.mjs';
 
 let text = "Hello, World!";
 let options = {};
@@ -88,7 +88,7 @@ function displayCompact(matrix) {
 
 // Print
 //displayLarge(matrix);
-//displayMedium(matrix);
+displayMedium(matrix);
 //displayCompact(matrix);
 //displayLarge(matrix, '  ', '██', '▓▓');  // █▓▒░
-displayIdentify(matrix);
+//displayIdentify(matrix);
