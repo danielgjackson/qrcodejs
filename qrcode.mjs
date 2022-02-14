@@ -699,7 +699,7 @@ export default class QrCode {
         const eccDivisor = ReedSolomon.Divisor(eccCodewords);
 
         const dataCapacityBytes = eccOffset;
-        const dataLenShort = dataCapacityBytes / eccBlockCount;
+        const dataLenShort = Math.floor(dataCapacityBytes / eccBlockCount);
         const countShortBlocks = (eccBlockCount - (dataCapacityBytes - (dataLenShort * eccBlockCount)));
         const dataLenLong = dataLenShort + (countShortBlocks >= eccBlockCount ? 0 : 1);
         for (let block = 0; block < eccBlockCount; block++) {

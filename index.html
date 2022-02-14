@@ -8,8 +8,11 @@
 	html, body {
 		font-family: sans-serif;
 	}
-	input[type=text] {
+	#input {
 		width: 90%;
+	}
+	#output {
+		cursor: copy;
 	}
 	</style>
 </head>
@@ -17,7 +20,9 @@
 <h1>QR Code JS Demo</h1>
 
 <ul>
-  <li>Repository: <a href="https://github.com/danielgjackson/qrcodejs">github.com/danielgjackson/qrcodejs</a></li>
+  <li>Generate a text-based QR Code for your input.</li>
+  <li>Click/tap the code to copy to your clipboard.</li>
+  <li>Open source repository: <a href="https://github.com/danielgjackson/qrcodejs">github.com/danielgjackson/qrcodejs</a></li>
 </ul>
 
 <div><label>Text: <input type="text" id="text"></label></div>
@@ -30,11 +35,11 @@
 <script type="module">
 import QrCode from './qrcode.mjs';
 
-function outputMedium(matrix) {
+function outputMedium(matrix, padding = 4) {
     const lines = [];
-    for (let y = 0; y < matrix.dimension; y += 2) {
+    for (let y = -padding; y < matrix.dimension + padding; y += 2) {
         const parts = [];
-        for (let x = 0; x < matrix.dimension; x++) {
+        for (let x = -padding; x < matrix.dimension + padding; x++) {
             const upper = matrix.getModule(x, y);
             const lower = y + 1 < matrix.dimension ? matrix.getModule(x, y + 1) : 0;
             let c = '?';
@@ -48,20 +53,36 @@ function outputMedium(matrix) {
         const line = parts.join('');
         lines.push(line);
     }    
-    return lines.join('\n');
+    return lines.join('\r\n');
+}
+
+function focus() {
+	document.querySelector('#text').select();
 }
 
 function change() {
 	const text = document.querySelector('#text').value;
-console.log(text);
 	const options = {};
 	const matrix = QrCode.generate(text, options);
 	const output = outputMedium(matrix);
 	document.querySelector('#output').innerText = output;
 }
 
+function click() {
+	const text = document.querySelector('#output').innerText;
+	const temp = document.createElement('textarea');
+	temp.value = text;
+	document.body.appendChild(temp);
+	temp.select();
+	document.execCommand('copy');
+	document.body.removeChild(temp);
+	document.querySelector('#text').focus();
+}
+
 function start() {
+	document.querySelector('#text').addEventListener('focus', focus);
 	document.querySelector('#text').addEventListener('input', change);
+	document.querySelector('#output').addEventListener('click', click);
 	document.querySelector('#text').focus();
 	change();
 }
