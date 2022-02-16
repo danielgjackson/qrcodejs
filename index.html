@@ -13,6 +13,17 @@
 	}
 	#output {
 		cursor: copy;
+		font-family: monospace;
+		-webkit-font-smoothing: none;
+		font-smooth: never;
+		text-rendering: optimizeSpeed;
+		line-height: 1.1;
+		white-space: nowrap;
+	}
+	/* Fix for monospace fonts where the space is not the same width as the block characters */
+	#output span {
+		display: inline-block;
+		width: 1ch;
 	}
 	</style>
 </head>
@@ -27,9 +38,9 @@
 
 <div><label>Text: <input type="text" id="text"></label></div>
 
-<pre id="output">
+<div id="output">
 -
-</pre>
+</div>
 
 </body>
 <script type="module">
@@ -44,16 +55,17 @@ function outputMedium(matrix, padding = 4) {
             const lower = y + 1 < matrix.dimension ? matrix.getModule(x, y + 1) : 0;
             let c = '?';
             // '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
-            if (upper && lower) c = '█';
-            else if (upper && !lower) c = '▀';
-            else if (!upper && lower) c = '▄';
-            else if (!upper && !lower) c = ' ';
+            // Figure space: '\u{2007}'
+            if (upper && lower) c = '<span>█</span>';
+            else if (upper && !lower) c = '<span>▀</span>';
+            else if (!upper && lower) c = '<span>▄</span>';
+            else if (!upper && !lower) c = '<span>&nbsp;</span>'; // ' ';
             parts.push(c);
         }
         const line = parts.join('');
         lines.push(line);
     }    
-    return lines.join('\r\n');
+    return lines.join('<br>');
 }
 
 function focus() {
@@ -61,11 +73,18 @@ function focus() {
 }
 
 function change() {
-	const text = document.querySelector('#text').value;
-	const options = {};
-	const matrix = QrCode.generate(text, options);
-	const output = outputMedium(matrix);
-	document.querySelector('#output').innerText = output;
+	let output;
+	try {
+		const text = document.querySelector('#text').value;
+		const options = {
+			errorCorrectionLevel: QrCode.ErrorCorrectionLevel.L,
+		};
+		const matrix = QrCode.generate(text, options);
+		output = outputMedium(matrix);
+	} catch (e) {
+		output = 'Error: ' + e;
+	}
+	document.querySelector('#output').innerHTML = output;
 }
 
 function click() {
