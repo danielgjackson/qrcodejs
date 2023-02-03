@@ -298,11 +298,11 @@ class Matrix {
 
     // Draw finder and separator
     drawFinder(ox, oy) {
-        const id = 'Fi';
         for (let y = -Math.floor(Matrix.FINDER_SIZE / 2) - 1; y <= Math.floor(Matrix.FINDER_SIZE / 2) + 1; y++) {
             for (let x = -Math.floor(Matrix.FINDER_SIZE / 2) - 1; x <= Math.floor(Matrix.FINDER_SIZE / 2) + 1; x++) {
                 let value = (Math.abs(x) > Math.abs(y) ? Math.abs(x) : Math.abs(y)) & 1 ? Matrix.MODULE_DARK : Matrix.MODULE_LIGHT;
                 if (x == 0 && y == 0) value = Matrix.MODULE_DARK;
+                const id = (x == 0 && y == 0) ? 'FI' : 'Fi';
                 this.setModule(ox + x, oy + y, value, id);
             }
         }    
@@ -318,10 +318,10 @@ class Matrix {
     }
 
     drawAlignment(ox, oy) {
-        const id = 'Al';
         for (let y = -Matrix.ALIGNMENT_RADIUS; y <= Matrix.ALIGNMENT_RADIUS; y++) {
             for (let x = -Matrix.ALIGNMENT_RADIUS; x <= Matrix.ALIGNMENT_RADIUS; x++) {
                 let value = 1 - ((Math.abs(x) > Math.abs(y) ? Math.abs(x) : Math.abs(y)) & 1) ? Matrix.MODULE_DARK : Matrix.MODULE_LIGHT;
+                const id = (x == 0 && y == 0) ? 'AL' : 'Al';
                 this.setModule(ox + x, oy + y, value, id);
             }
         }
