@@ -3,6 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:;base64,=">
 	<title>QR Code JS Demo</title>
 	<style type="text/css">
 	html, body {
@@ -11,7 +12,7 @@
 	#text {
 		width: 90%;
 	}
-	#output {
+	#output_text {
 		cursor: copy;
 		font-family: monospace;
 		-webkit-font-smoothing: none;
@@ -21,9 +22,18 @@
 		white-space: nowrap;
 	}
 	/* Fix for monospace fonts where the space is not the same width as the block characters */
-	#output span {
+	#output_text span {
 		display: inline-block;
 		width: 1ch;
+	}
+	#output_image {
+		cursor: copy;
+	}
+	#output_image img {
+		max-width: 50vw;
+	}
+	#output_image svg {
+		max-width: 50vw;
 	}
 	</style>
 </head>
@@ -38,34 +48,33 @@
 
 <div><label>Text: <input type="text" id="text"></label></div>
 
-<div id="output">
+<details>
+<summary>Text</summary>
+<div id="output_text">
 -
+</div>
+</details>
+
+<div id="output_image">
+  <details>
+    <summary>Image &lt;img&gt;</summary>
+    <img src="" alt="">
+  </details>
+  <details open>
+    <summary>Image &lt;svg&gt;</summary>
+	<svg></svg>
+  </details>
 </div>
 
 </body>
 <script type="module">
 import QrCode from './qrcode.mjs';
+import { renderTextMedium, renderSvg } from './render-matrix.mjs';
 
-function outputMedium(matrix, padding = 4) {
-    const lines = [];
-    for (let y = -padding; y < matrix.dimension + padding; y += 2) {
-        const parts = [];
-        for (let x = -padding; x < matrix.dimension + padding; x++) {
-            const upper = matrix.getModule(x, y);
-            const lower = y + 1 < matrix.dimension ? matrix.getModule(x, y + 1) : 0;
-            let c = '?';
-            // '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
-            // Figure space: '\u{2007}'
-            if (upper && lower) c = '<span>█</span>';
-            else if (upper && !lower) c = '<span>▀</span>';
-            else if (!upper && lower) c = '<span>▄</span>';
-            else if (!upper && !lower) c = '<span>&nbsp;</span>'; // ' ';
-            parts.push(c);
-        }
-        const line = parts.join('');
-        lines.push(line);
-    }    
-    return lines.join('<br>');
+function renderText(matrix) {
+	// '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
+	// Figure space: '\u{2007}'
+	return renderTextMedium(matrix, ['<span>&nbsp;</span>', '<span>▀</span>', '<span>▄</span>', '<span>█</span>'], '<br>');
 }
 
 function focus() {
@@ -73,22 +82,30 @@ function focus() {
 }
 
 function change() {
-	let output;
+	let output_text;
+	let output_image;
 	try {
 		const text = document.querySelector('#text').value;
 		const options = {
 			errorCorrectionLevel: QrCode.ErrorCorrectionLevel.L,
 		};
 		const matrix = QrCode.generate(text, options);
-		output = outputMedium(matrix);
+		output_text = renderText(matrix);
+		output_image = renderSvg(matrix);
 	} catch (e) {
-		output = 'Error: ' + e;
+		output_text = 'Error: ' + e;
 	}
-	document.querySelector('#output').innerHTML = output;
+	document.querySelector('#output_text').innerHTML = output_text;
+	document.querySelector('#output_image img').src = 'data:image/svg+xml;utf8,' + encodeURIComponent(output_image);
+	if (output_image) {
+		document.querySelector('#output_image svg').outerHTML = output_image;
+	} else {
+		document.querySelector('#output_image svg').innerHTML = output_image;
+	}
 }
 
-function click() {
-	const text = document.querySelector('#output').innerText;
+function click_text() {
+	const text = document.querySelector('#output_text').innerText;
 	const temp = document.createElement('textarea');
 	temp.value = text;
 	document.body.appendChild(temp);
@@ -98,10 +115,47 @@ function click() {
 	document.querySelector('#text').focus();
 }
 
+// function saveContent(fileContents, fileName) {
+// 	const link = document.createElement('a');
+// 	link.download = fileName;
+// 	link.href = 'data:,' + fileContents;
+// 	link.click();
+// }
+
+// This copies the range as HTML (not just an image)
+function copySelectionToClipboard(element) {
+	window.getSelection().removeAllRanges();
+	const range = document.createRange();
+	range.selectNode(element);
+	window.getSelection().addRange(range);
+	document.execCommand('copy');
+	window.getSelection().removeAllRanges();
+}
+
+function click_image() {
+	try {
+		//const svgSource = decodeURIComponent(document.querySelector('#output_image img').src.split(',').slice(1).join(''));
+		const svgSource = document.querySelector('#output_image svg').outerHTML;
+		if (typeof ClipboardItem !== 'undefined') {
+			navigator.clipboard.write([
+				new ClipboardItem({
+					'image/svg+xml': svgSource,
+				})
+			]);
+		} else {
+			copySelectionToClipboard(document.querySelector('#output_image img'));
+		}
+	} catch (error) {
+		console.error(error);
+	}
+}
+
 function start() {
 	document.querySelector('#text').addEventListener('focus', focus);
 	document.querySelector('#text').addEventListener('input', change);
-	document.querySelector('#output').addEventListener('click', click);
+	document.querySelector('#output_text').addEventListener('click', click_text);
+	document.querySelector('#output_image svg').addEventListener('click', click_image);
+	document.querySelector('#output_image img').addEventListener('click', click_image);
 	document.querySelector('#text').focus();
 	change();
 }

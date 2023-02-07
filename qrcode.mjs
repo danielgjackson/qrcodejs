@@ -275,6 +275,8 @@ class Matrix {
         const capacity = this.dimension * this.dimension;
         this.buffer = new Array(capacity);
         this.identity = new Array(capacity);
+        this.quiet = Matrix.QUIET_STANDARD;
+        this.invert = false;
     }
 
     setModule(x, y, value, identity) {
@@ -441,7 +443,6 @@ class Matrix {
             }
         }
     }
-
 
     evaluatePenalty() {
         // Note: Penalty calculated over entire code (although format information is not yet written)
@@ -793,6 +794,8 @@ export default class QrCode {
             maxVersion: QrCode.VERSION_MAX,
             optimizeEcc: true,
             maskPattern: null,
+            quiet: Matrix.QUIET_STANDARD,
+            invert: false,
         }, userOptions)
 
         // Allow either a single text string or an array of text strings likely to encode as different modes
@@ -823,6 +826,8 @@ export default class QrCode {
 
         // Create an empty matrix
         const matrix = new Matrix(version);
+        matrix.quiet = options.quiet;
+        matrix.invert = options.invert;
 
         // Populate the matrix with function patterns: finder, separators, timing, alignment, temporary version & format info
         matrix.populateFunctionPatterns();
