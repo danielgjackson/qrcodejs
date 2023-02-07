@@ -277,6 +277,7 @@ class Matrix {
         this.identity = new Array(capacity);
         this.quiet = Matrix.QUIET_STANDARD;
         this.invert = false;
+        this.text = null;
     }
 
     setModule(x, y, value, identity) {
@@ -724,7 +725,7 @@ export default class QrCode {
         matrix.cursorReset();
         let totalWritten = 0;
 
-        // Write data codewords interleaved accross ecc blocks -- some early blocks may be short
+        // Write data codewords interleaved across ecc blocks -- some early blocks may be short
         for (let i = 0; i < dataLenLong; i++) {
             for (let block = 0; block < eccBlockCount; block++) {
                 // Calculate offset and length (earlier consecutive blocks may be short by 1 codeword)
@@ -737,7 +738,7 @@ export default class QrCode {
             }
         }
 
-        // Write ECC codewords interleaved accross ecc blocks
+        // Write ECC codewords interleaved across ecc blocks
         for (let i = 0; i < eccCodewords; i++) {
             for (let block = 0; block < eccBlockCount; block++) {
                 const sourceBit = 8 * eccOffset + (block * eccCodewords * 8) + (i * 8);
@@ -826,6 +827,7 @@ export default class QrCode {
 
         // Create an empty matrix
         const matrix = new Matrix(version);
+        matrix.text = text;
         matrix.quiet = options.quiet;
         matrix.invert = options.invert;
 

@@ -67,6 +67,10 @@ export function renderTextCompact(matrix, segments = [' ', '▘', '▝', '▀', 
     return lines.join(sep);
 }
 
+function escape(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/\'/g, "&apos;");
+}
+
 export function renderSvg(matrix, options) {
     options = Object.assign({
         moduleRound: null,
@@ -80,7 +84,8 @@ export function renderSvg(matrix, options) {
     lines.push(`<?xml version="1.0"?>`);
     // viewport-fill=\"white\" 
     lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="currentColor" viewBox="${-matrix.quiet} ${-matrix.quiet} ${2 * matrix.quiet + matrix.dimension} ${2 * matrix.quiet + matrix.dimension}" shape-rendering="crispEdges">`);
-    //lines.push(`<desc>${data}</desc>`);
+    lines.push(`<title>${escape(matrix.text)}</title>`);
+    //lines.push(`<desc>${escape(matrix.text)}</desc>`);
     lines.push(`<defs>`);
 
     // module data bit (dark)

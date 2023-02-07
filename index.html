@@ -26,13 +26,10 @@
 		display: inline-block;
 		width: 1ch;
 	}
-	#output_image {
+	#output_img, #output_svg {
 		cursor: copy;
 	}
-	#output_image img {
-		max-width: 50vw;
-	}
-	#output_image svg {
+	#output_img img, #output_svg svg {
 		max-width: 50vw;
 	}
 	</style>
@@ -55,18 +52,20 @@
 </div>
 </details>
 
-<div id="output_image">
-  <details>
-    <summary>Image &lt;img&gt;</summary>
-    <img src="" alt="">
-  </details>
-  <details open>
-    <summary>Image &lt;svg&gt;</summary>
-	<svg></svg>
-  </details>
+<details open>
+<summary>Image &lt;img&gt;</summary>
+<div id="output_img">
+  <img src="" alt="">
 </div>
+</details>
 
-</body>
+<details>
+<summary>Image &lt;svg&gt;</summary>
+<div id="output_svg">
+  <svg></svg>
+</div>
+</details>
+
 <script type="module">
 import QrCode from './qrcode.mjs';
 import { renderTextMedium, renderSvg } from './render-matrix.mjs';
@@ -82,80 +81,215 @@ function focus() {
 }
 
 function change() {
-	let output_text;
-	let output_image;
+	const input = document.querySelector('#text').value;
+	let text;
+	let svg;
 	try {
-		const text = document.querySelector('#text').value;
 		const options = {
 			errorCorrectionLevel: QrCode.ErrorCorrectionLevel.L,
 		};
-		const matrix = QrCode.generate(text, options);
-		output_text = renderText(matrix);
-		output_image = renderSvg(matrix);
+		const matrix = QrCode.generate(input, options);
+		text = renderText(matrix);
+		svg = renderSvg(matrix);
 	} catch (e) {
-		output_text = 'Error: ' + e;
+		text = 'Error: ' + e;
 	}
-	document.querySelector('#output_text').innerHTML = output_text;
-	document.querySelector('#output_image img').src = 'data:image/svg+xml;utf8,' + encodeURIComponent(output_image);
-	if (output_image) {
-		document.querySelector('#output_image svg').outerHTML = output_image;
+	const textElement = document.querySelector('#output_text');
+	const imgElement = document.querySelector('#output_img img');
+	const svgElement = document.querySelector('#output_svg svg');
+	textElement.innerHTML = text;
+	imgElement.src = 'data:image/svg+xml,' + encodeURIComponent(svg);
+	imgElement.alt = input;
+	svgElement.alt = input;
+	if (svg) {
+		svgElement.outerHTML = svg;
 	} else {
-		document.querySelector('#output_image svg').innerHTML = output_image;
+		svgElement.innerHTML = svg;
 	}
 }
 
-function click_text() {
-	const text = document.querySelector('#output_text').innerText;
+function copyMultiLinePlainTextToClipboard(text) {
 	const temp = document.createElement('textarea');
 	temp.value = text;
 	document.body.appendChild(temp);
 	temp.select();
 	document.execCommand('copy');
 	document.body.removeChild(temp);
+}
+
+function safeFilename(text) {
+	return text.replaceAll(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+}
+
+async function dataUriToBlob(dataUri) {
+	try {
+		return await (await fetch(dataUri)).blob();
+	} catch (e) {
+		const protocolParts = dataUri.split(':');
+		if (protocolParts[0] != 'data') throw new Error('Invalid data URI');
+		const nonProtocol = protocolParts.slice(1).join(':');
+		const dataParts = nonProtocol.split(',');
+		const metaParts = dataParts[0].split(';');
+		const type = metaParts[0];
+		const encoding = metaParts[1];
+		const rawData = dataParts.slice(1).join('');
+        const data = encoding == 'base64' ? atob(rawData) : decodeURIComponent(rawData);
+		const bytes = [];
+        for (let i = 0; i < binary.length; i++) bytes.push(data.charCodeAt(i));
+        return new Blob([new Uint8Array(bytes)], { type });
+	}
+}
+
+async function rasterizeImageToBlob(src, type = 'image/png') {
+	const img = new Image();
+  	const ctx = document.createElement('CANVAS').getContext('2d');
+	img.crossOrigin = '';
+	img.src = src;
+	return new Promise(resolve => {
+		img.onload = () => {
+			ctx.canvas.width = img.naturalWidth;
+			ctx.canvas.height = img.naturalHeight;
+			ctx.drawImage(img, 0, 0);
+			ctx.canvas.toBlob((blob) => resolve(blob), type);
+		};
+	});
+}
+
+function svgToBlob(svg, type = 'image/svg+xml') {
+	return new Blob([svg], { type });
+}
+
+function copyBlobToClipboard(blob) {
+  const itemSrc = {};
+  itemSrc[blob.type] = blob; 
+  const item = new ClipboardItem(itemSrc);
+  return navigator.clipboard.write([item]);
+}
+
+function downloadBlob(blob, filename = null, type = null) { // 'application/octet-stream'
+	if (!(blob instanceof Blob)) { blob = new Blob([blob], type ? { type } : undefined); }
+	const elem = window.document.createElement('A');
+	elem.href = window.URL.createObjectURL(blob);
+	if (filename) elem.download = filename;
+	if (type) elem.type = type;
+	document.body.appendChild(elem);
+	elem.click();
+	document.body.removeChild(elem);
+}
+
+async function copySvgToClipboard(svg, imgSrc, element) {
+	// Try to copy the SVG as an image to the clipboard
+	try {
+		if ('write' in navigator.clipboard && navigator.permissions) {
+			const permissionResult = await navigator.permissions.query({ name: 'clipboard-write' });
+			if (permissionResult.state === 'granted') {
+				const svgBlob = svgToBlob(svg);
+				const pngBlob = await rasterizeImageToBlob(imgSrc);
+				const htmlBlob = svgToBlob(svg, 'text/html');
+				const textBlob = svgToBlob(svg, 'text/plain');
+
+console.log('COPY: clipboard.write(ClipboardItem) -- SVG')
+				try {
+					const item = new ClipboardItem({
+						'image/svg+xml': svgBlob,
+						//'image/png': pngBlob,
+						//'text/html': htmlBlob,
+						//'text/plain': textBlob,
+					});
+					await navigator.clipboard.write([item]);
+					return true;
+				} catch (e) {
+					console.error(e.name, e.message);
+				}
+
+console.log('COPY: clipboard.write(ClipboardItem) -- PNG')
+				try {
+					const item = new ClipboardItem({
+						//'image/svg+xml': svgBlob,
+						'image/png': pngBlob,
+						//'text/html': htmlBlob,
+						//'text/plain': textBlob,
+					});
+					await navigator.clipboard.write([item]);
+					return true;
+				} catch (e) {
+					console.error(e.name, e.message);
+				}
+
+				console.log('COPY: clipboard.write(ClipboardItem) -- HTML')
+				try {
+					const item = new ClipboardItem({
+						//'image/svg+xml': svgBlob,
+						//'image/png': pngBlob,
+						'text/html': htmlBlob,
+						'text/plain': textBlob,
+					});
+					await navigator.clipboard.write([item]);
+					return true;
+				} catch (e) {
+					console.error(e.name, e.message);
+				}
+
+			}
+		}
+	} catch (e) {
+		console.error(e.name, e.message);
+	}
+
+	try {
+		// Fallback: this tries to copy the selected range around the image as HTML
+console.log('COPY: execCommand(copy) range')
+		window.getSelection().removeAllRanges();
+		const range = document.createRange();
+		range.selectNode(element);
+		window.getSelection().addRange(range);
+		document.execCommand('copy');
+		window.getSelection().removeAllRanges();
+		return true;
+	} catch (e) {
+		console.error(e.name, e.message);
+	}
+
+	// Fall back to copying source
+	try {
+console.log('COPY: writeText source')
+		await navigator.clipboard.writeText(svg);
+		return true;
+	} catch (e) {
+		console.error(e.name, e.message);
+	}
+
+	return false;
+}
+
+function click_text() {
+	const text = document.querySelector('#output_text').innerText;
+	copyMultiLinePlainTextToClipboard(text);
 	document.querySelector('#text').focus();
 }
 
-// function saveContent(fileContents, fileName) {
-// 	const link = document.createElement('a');
-// 	link.download = fileName;
-// 	link.href = 'data:,' + fileContents;
-// 	link.click();
-// }
-
-// This copies the range as HTML (not just an image)
-function copySelectionToClipboard(element) {
-	window.getSelection().removeAllRanges();
-	const range = document.createRange();
-	range.selectNode(element);
-	window.getSelection().addRange(range);
-	document.execCommand('copy');
-	window.getSelection().removeAllRanges();
+async function click_img() {
+	const element = document.querySelector('#output_img img');
+	const svg = decodeURIComponent(element.src.split(',').slice(1).join(''));
+	//const imgSrc = element.src;
+	//copySvgToClipboard(svg, imgSrc, element);
+	downloadBlob(svgToBlob(svg), safeFilename(element.alt) + '.svg');
 }
 
-function click_image() {
-	try {
-		//const svgSource = decodeURIComponent(document.querySelector('#output_image img').src.split(',').slice(1).join(''));
-		const svgSource = document.querySelector('#output_image svg').outerHTML;
-		if (typeof ClipboardItem !== 'undefined') {
-			navigator.clipboard.write([
-				new ClipboardItem({
-					'image/svg+xml': svgSource,
-				})
-			]);
-		} else {
-			copySelectionToClipboard(document.querySelector('#output_image img'));
-		}
-	} catch (error) {
-		console.error(error);
-	}
+function click_svg() {
+	const element = document.querySelector('#output_svg svg');
+	const svg = element.outerHTML;
+	//const imgSrc = 'data:image/svg+xml,' + encodeURIComponent(svg);
+	//copySvgToClipboard(svg, imgSrc, element);
+	downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
 }
 
 function start() {
 	document.querySelector('#text').addEventListener('focus', focus);
 	document.querySelector('#text').addEventListener('input', change);
 	document.querySelector('#output_text').addEventListener('click', click_text);
-	document.querySelector('#output_image svg').addEventListener('click', click_image);
-	document.querySelector('#output_image img').addEventListener('click', click_image);
+	document.querySelector('#output_img img').addEventListener('click', click_img);
+	document.querySelector('#output_svg').addEventListener('click', click_svg);
 	document.querySelector('#text').focus();
 	change();
 }
@@ -163,4 +297,5 @@ function start() {
 window.addEventListener('DOMContentLoaded', start);
 
 </script>
+</body>
 </html>
