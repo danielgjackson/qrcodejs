@@ -1,6 +1,6 @@
 # QR Code JS
 
-Javascript QR Code generator.
+Javascript QR Code generator.  Derived from my C version: [qrcode](https://github.com/danielgjackson/qrcode).
 
 
 ## Demo Site
