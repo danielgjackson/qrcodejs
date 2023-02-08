@@ -68,12 +68,15 @@
 
 <script type="module">
 import QrCode from './qrcode.mjs';
-import { renderTextMedium, renderSvg } from './render-matrix.mjs';
 
-function renderText(matrix) {
+function renderHtml(matrix) {
 	// '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
 	// Figure space: '\u{2007}'
-	return renderTextMedium(matrix, ['<span>&nbsp;</span>', '<span>▀</span>', '<span>▄</span>', '<span>█</span>'], '<br>');
+	const renderOptions = {
+		segments: ['<span>&nbsp;</span>', '<span>▀</span>', '<span>▄</span>', '<span>█</span>'],
+		sep: '<br>',
+	};
+	return QrCode.render('medium', matrix, renderOptions);
 }
 
 function focus() {
@@ -85,12 +88,14 @@ function change() {
 	let text;
 	let svg;
 	try {
-		const options = {
+		const qrOptions = {
 			errorCorrectionLevel: QrCode.ErrorCorrectionLevel.L,
 		};
-		const matrix = QrCode.generate(input, options);
-		text = renderText(matrix);
-		svg = renderSvg(matrix);
+		const matrix = QrCode.generate(input, qrOptions);
+		text = renderHtml(matrix);
+		const renderOptions = {
+		};
+		svg = QrCode.render('svg', matrix, renderOptions);
 	} catch (e) {
 		text = 'Error: ' + e;
 	}
