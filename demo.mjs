@@ -23,14 +23,7 @@ for (let i = 2; i < process.argv.length; i++) {
         else if (argv == '--uppercase') { programOptions.uppercase = true; }
         else if (argv == '--file') { programOptions.file = process.argv[++i]; }
         // QR options
-        else if (argv.startsWith('--ecl:')) { 
-            qrOptions.errorCorrectionLevel = {
-                l: QrCode.ErrorCorrectionLevel.L,
-                m: QrCode.ErrorCorrectionLevel.M,
-                q: QrCode.ErrorCorrectionLevel.Q,
-                h: QrCode.ErrorCorrectionLevel.H,
-            }[argv.split(':')[1]]; 
-        }
+        else if (argv.startsWith('--ecl:')) { qrOptions.errorCorrectionLevel = QrCode.ErrorCorrectionLevel[argv.split(':')[1].toUpperCase()]; }
         else if (argv == '--fixecl') { qrOptions.optimizeEcc = false; }
         else if (argv == '--version') { qrOptions.minVersion = qrOptions.maxVersion = parseInt(process.argv[++i]); }
         else if (argv == '--mask') { qrOptions.maskPattern = parseInt(process.argv[++i]); }

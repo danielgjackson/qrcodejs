@@ -9,6 +9,9 @@
 	html, body {
 		font-family: sans-serif;
 	}
+	.controls {
+		margin: 1em 0;
+	}
 	#text {
 		width: 90%;
 	}
@@ -38,12 +41,37 @@
 <h1>QR Code JS Demo</h1>
 
 <ul>
-  <li>Generate a text-based QR Code for your input.</li>
-  <li>Click/tap the code to copy to your clipboard.</li>
+  <li>Generate a QR Code for your input.</li>
   <li>Open source repository: <a href="https://github.com/danielgjackson/qrcodejs">github.com/danielgjackson/qrcodejs</a></li>
+  <li>Simpler codes are easier to scan:
+	<ul>
+		<li>Keep the input as short as possible.</li>
+		<li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but probably best not to rely on this.</li>
+		<li>All-numeric text is the most compact, but all upper-case alphanumeric (with some symbols allowed) is more compat than mixed-case.</li>
+		<li>Do not use upper case for the URL past the domain name without first checking the server responds correctly.</li>
+	</ul>
+  </li>
+  <li>Include a written alternative for the URL.</li>
 </ul>
 
-<div><label>Text: <input type="text" id="text"></label></div>
+<div class="controls">
+	<label>Error correction level:
+		<select id="ecl">
+			<option value="L+" selected>Low, or better for same size (~7%+)</option>
+			<option value="M+">Medium, or better for same size (~15%+)</option>
+			<option value="Q+">Quartile, or better for same size (~25%+)</option>
+			<option value="H">High (~30%)</option>
+			<option value="Q">Quartile (~25%)</option>
+			<option value="M">Medium (~15%)</option>
+			<option value="L">Low (~7%)</option>
+		</select>
+	</label>
+	(increases complexity, but more robust to damage or occlusion).
+</div>
+
+<div class="controls">
+	<label>Text: <input type="text" id="text" placeholder="https://example.com"></label>
+</div>
 
 <details>
 <summary>Text</summary>
@@ -88,8 +116,10 @@ function change() {
 	let text;
 	let svg;
 	try {
+		const ecl = document.querySelector('#ecl').value;
 		const qrOptions = {
-			errorCorrectionLevel: QrCode.ErrorCorrectionLevel.L,
+			errorCorrectionLevel: QrCode.ErrorCorrectionLevel[ecl[0]],
+			optimizeEcc: ecl.includes('+'),
 		};
 		const matrix = QrCode.generate(input, qrOptions);
 		text = renderHtml(matrix);
@@ -292,6 +322,7 @@ function click_svg() {
 function start() {
 	document.querySelector('#text').addEventListener('focus', focus);
 	document.querySelector('#text').addEventListener('input', change);
+	document.querySelector('#ecl').addEventListener('change', change);
 	document.querySelector('#output_text').addEventListener('click', click_text);
 	document.querySelector('#output_img img').addEventListener('click', click_img);
 	document.querySelector('#output_svg').addEventListener('click', click_svg);
