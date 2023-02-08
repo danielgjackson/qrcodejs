@@ -2,46 +2,64 @@
 
 Javascript QR Code generator.
 
-* [Demo site](https://danielgjackson.github.io/qrcodejs)
 
-* Install (assuming `npm`):
+## Demo Site
 
-    ```bash
-    npm i -S https://github.com/danielgjackson/qrcodejs
-    ```
+Generate your own SVG QR Code:
 
-* Quick test:
+* [danielgjackson.github.io/qrcodejs](https://danielgjackson.github.io/qrcodejs)
 
-    ```javascript
-    (async() => {
-        const { default: QrCode } = await import('qrcodejs');
-        console.log(QrCode.render('medium', QrCode.generate('Hello, World!')));
-    })();
-    ```
 
-* Example usage (assuming in a `.mjs` ECMAScript module):
+## Example usage
 
-    ```javascript
-    import QrCode from 'qrcodejs';
+Install (if using `npm`):
+
+```bash
+npm i -S https://github.com/danielgjackson/qrcodejs
+```
+
+Quick test (also works from a non-module):
+
+```javascript
+(async() => {
+    const { default: QrCode } = await import('qrcodejs');
+    console.log(QrCode.render('medium', QrCode.generate('Hello, World!')));
+})();
+```
+
+Example usage from an ECMAScript module (`.mjs` file):
+
+```javascript
+import QrCode from 'qrcodejs';
+
+const data = 'Hello, World!';
+const matrix = QrCode.generate(data);
+const text = QrCode.render('medium', matrix);
+console.log(text);
+```
+
+
+## Example web page usage
+
+Example usage in a web page:
+
+```html
+<img>
+<script type="module">
+    import QrCode from 'https://danielgjackson.github.io/qrcodejs/qrcode.mjs';
 
     const data = 'Hello, World!';
     const matrix = QrCode.generate(data);
-    const text = QrCode.render('medium', matrix);
-    console.log(text);
-    ```
+    const uri = QrCode.render('svg-uri', matrix);
+    document.querySelector('img').src = uri;
+</script>
+```
 
-* Example usage in a web page:
 
-    ```html
-    <img>
-    <script type="module">
-        import QrCode from 'https://danielgjackson.github.io/qrcodejs/qrcode.mjs';
+## Browser without a server
 
-        const data = 'Hello, World!';
-        const matrix = QrCode.generate(data);
-        const uri = QrCode.render('svg-uri', matrix);
-        document.querySelector('img').src = uri;
-    </script>
-    ```
+If you would like to use this directly as part of a browser-based app over the `file:` protocol (which disallows modules), you can easily convert this to a non-module `.js` file:
 
-* If you would like to use this as a non-module .js file, e.g. as part of a browser-based app over the `file:` protocol (which disallows modules), simply remove the last line of [qrcode.mjs](qrcode.mjs) (`export default QrCode`) and remove any `type="module"` attributes from the `<script>` tag.
+  * Download [`qrcode.mjs`](https://raw.githubusercontent.com/danielgjackson/qrcodejs/master/qrcode.mjs) renamed as `qrcode.js`.
+  * Remove the last line from the file (`export default QrCode`).
+  * Ensure there is no `type="module"` attribute in your `<script src="qrcode.js"></script>` tag.
