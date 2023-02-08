@@ -43,3 +43,5 @@ Javascript QR Code generator.
         document.querySelector('img').src = uri;
     </script>
     ```
+
+* If you would like to use this as a non-module .js file, e.g. as part of a browser-based app over the `file:` protocol (which disallows modules), simply remove the last line of [qrcode.mjs](qrcode.mjs) (`export default QrCode`) and remove any `type="module"` attributes from the `<script>` tag.

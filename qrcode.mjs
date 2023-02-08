@@ -522,7 +522,7 @@ class Matrix {
 }
 
 
-export default class QrCode {
+class QrCode {
 
     static VERSION_MIN = 1;
     static VERSION_MAX = 40;
@@ -1191,3 +1191,7 @@ function renderBmpUri(matrix, options) {
     }
     return 'data:image/bmp;base64,' + encoded;
 }
+
+
+// Comment-out the following line to convert this into a non-module .js file (e.g. for use in a <script src> tag over the file: protocol)
+export default QrCode
