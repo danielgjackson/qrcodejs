@@ -41,6 +41,9 @@ for (let i = 2; i < process.argv.length; i++) {
         else if (argv == '--svg-round') { renderOptions.moduleRound = parseFloat(process.argv[++i]); }
         else if (argv == '--svg-finder-round') { renderOptions.finderRound = parseFloat(process.argv[++i]); }
         else if (argv == '--svg-alignment-round') { renderOptions.alignmentRound = parseFloat(process.argv[++i]); }
+        // BMP renderer options
+        else if (argv == '--bmp-scale') { renderOptions.scale = parseFloat(process.argv[++i]); }
+        else if (argv == '--bmp-alpha') { renderOptions.alpha = true; }
         // End of options
         else if (argv == '--') matchParams = false;
         else {
@@ -54,7 +57,7 @@ for (let i = 2; i < process.argv.length; i++) {
 }
 
 if (programOptions.help) {
-    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|svg>] [--file filename] <text>');
+    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|bmp|svg>] [--file filename] <text>');
     console.log('')
     console.log('For --output:svg:  [--svg-point 1.0] [--svg-round 0.0] [--svg-finder-round 0.0] [--svg-alignment-round 0.0]');
 
@@ -71,7 +74,7 @@ if (programOptions.uppercase) {
 const matrix = QrCode.generate(programOptions.text, qrOptions);
 const output = QrCode.render(programOptions.output, matrix, renderOptions);
 if (programOptions.file) {
-    fs.writeFileSync(programOptions.file, output);
+    fs.writeFileSync(programOptions.file, Buffer.from(output));
 } else {
     console.log(output);
 }
