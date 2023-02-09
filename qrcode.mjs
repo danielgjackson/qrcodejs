@@ -1158,7 +1158,7 @@ function renderBmp(matrix, options) {
         height: null,
     }, options);
     const size = matrix.dimension + 2 * matrix.quiet;
-    if (options.width === null) options.width = size * options.scale;
+    if (options.width === null) options.width = Math.floor(size * options.scale);
     if (options.height === null) options.height = options.width;
 
     const colorData = Array(options.width * options.height).fill(null);
@@ -1183,12 +1183,7 @@ function renderBmp(matrix, options) {
 
 function renderBmpUri(matrix, options) {
     const bmpData = renderBmp(matrix, options);
-    let encoded;
-    if (typeof globalThis.btoa === 'undefined') {
-        encoded = Buffer.from(bmpData).toString('base64');
-    } else {
-        encoded = btoa(String.fromCharCode(...new Uint8Array(bmpData)));
-    }
+    const encoded = btoa(new Uint8Array(bmpData).reduce((data, v) => data + String.fromCharCode(v), ''))
     return 'data:image/bmp;base64,' + encoded;
 }
 

@@ -15,13 +15,13 @@ Generate your own SVG QR Code:
 If you have [Deno](https://deno.land/) installed, you can generate a QR Code in your terminal:
 
 ```bash
-deno run https://danielgjackson.github.io/qrcodejs/demo.mjs 'Hello, World!'
+deno run https://danielgjackson.github.io/qrcodejs/qrcli.mjs 'Hello, World!'
 ```
 
 ...or write out a QR Code to a file:
 
 ```bash
-deno run --allow-write https://danielgjackson.github.io/qrcodejs/demo.mjs --output:svg --file hello.svg 'Hello, World!'
+deno run --allow-write https://danielgjackson.github.io/qrcodejs/qrcli.mjs --output:svg --file hello.svg 'Hello, World!'
 ```
 
 

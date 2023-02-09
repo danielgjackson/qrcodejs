@@ -71,7 +71,7 @@ if (programOptions.uppercase) {
 const matrix = QrCode.generate(programOptions.text, qrOptions);
 const output = QrCode.render(programOptions.output, matrix, renderOptions);
 if (programOptions.file) {
-    fs.writeFileSync(programOptions.file, new Uint8Array(output));
+    fs.writeFileSync(programOptions.file, new Uint8Array(output));  // Buffer.from(output)
 } else {
     console.log(output);
 }
