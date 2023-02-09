@@ -35,6 +35,8 @@ Install (if using `npm`):
 npm i -S https://github.com/danielgjackson/qrcodejs
 ```
 
+<!--
+
 Quick test (also works from a non-module):
 
 ```javascript
@@ -43,6 +45,8 @@ Quick test (also works from a non-module):
     console.log(QrCode.render('medium', QrCode.generate('Hello, World!')));
 })();
 ```
+
+-->
 
 Example usage from an ECMAScript module (`.mjs` file):
 
