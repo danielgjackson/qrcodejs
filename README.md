@@ -10,6 +10,21 @@ Generate your own SVG QR Code:
 * [danielgjackson.github.io/qrcodejs](https://danielgjackson.github.io/qrcodejs)
 
 
+## QR Codes in you terminal
+
+If you have [Deno](https://deno.land/) installed, you can generate a QR Code in your terminal:
+
+```bash
+deno run https://danielgjackson.github.io/qrcodejs/demo.mjs 'Hello, World!'
+```
+
+...or write out a QR Code to a file:
+
+```bash
+deno run https://danielgjackson.github.io/qrcodejs/demo.mjs --output:svg --file hello.svg 'Hello, World!'
+```
+
+
 ## Getting started
 
 ### Example usage

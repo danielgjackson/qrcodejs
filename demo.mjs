@@ -1,5 +1,5 @@
 import QrCode from './qrcode.mjs';
-import fs from 'fs';
+import fs from 'node:fs';
 
 const programOptions = {
     text: 'Hello, world!',
@@ -13,39 +13,43 @@ const renderOptions = {};
 
 let matchParams = true;
 const textParts = [];
-for (let i = 2; i < process.argv.length; i++) {
-    const argv = process.argv[i];
-    if (matchParams && argv.startsWith('-')) {
+
+// Get args on Deno or Node
+const args = globalThis.Deno ? Deno.args : process.argv.slice(2);
+
+for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (matchParams && arg.startsWith('-')) {
         // Program options
-        if (argv == '--help') { programOptions.help = true; }
-        else if (argv.startsWith('--output:')) { programOptions.output = argv.split(':')[1]; }
-        else if (argv == '--debug-data') { programOptions.output = 'large'; renderOptions.segments = ['  ', '██', '▓▓']; } // █▓▒░
-        else if (argv == '--uppercase') { programOptions.uppercase = true; }
-        else if (argv == '--file') { programOptions.file = process.argv[++i]; }
+        if (arg == '--help') { programOptions.help = true; }
+        else if (arg.startsWith('--output:')) { programOptions.output = arg.split(':')[1]; }
+        else if (arg == '--debug-data') { programOptions.output = 'large'; renderOptions.segments = ['  ', '██', '▓▓']; } // █▓▒░
+        else if (arg == '--uppercase') { programOptions.uppercase = true; }
+        else if (arg == '--file') { programOptions.file = args[++i]; }
         // QR options
-        else if (argv.startsWith('--ecl:')) { qrOptions.errorCorrectionLevel = QrCode.ErrorCorrectionLevel[argv.split(':')[1].toUpperCase()]; }
-        else if (argv == '--fixecl') { qrOptions.optimizeEcc = false; }
-        else if (argv == '--version') { qrOptions.minVersion = qrOptions.maxVersion = parseInt(process.argv[++i]); }
-        else if (argv == '--mask') { qrOptions.maskPattern = parseInt(process.argv[++i]); }
-        else if (argv == '--quiet') { qrOptions.quiet = parseInt(process.argv[++i]); }
-        else if (argv == '--invert') { qrOptions.invert = true; }
+        else if (arg.startsWith('--ecl:')) { qrOptions.errorCorrectionLevel = QrCode.ErrorCorrectionLevel[arg.split(':')[1].toUpperCase()]; }
+        else if (arg == '--fixecl') { qrOptions.optimizeEcc = false; }
+        else if (arg == '--version') { qrOptions.minVersion = qrOptions.maxVersion = parseInt(args[++i]); }
+        else if (arg == '--mask') { qrOptions.maskPattern = parseInt(args[++i]); }
+        else if (arg == '--quiet') { qrOptions.quiet = parseInt(args[++i]); }
+        else if (arg == '--invert') { qrOptions.invert = true; }
         // SVG renderer options
-        else if (argv == '--svg-point') { renderOptions.moduleSize = parseFloat(process.argv[++i]); }
-        else if (argv == '--svg-round') { renderOptions.moduleRound = parseFloat(process.argv[++i]); }
-        else if (argv == '--svg-finder-round') { renderOptions.finderRound = parseFloat(process.argv[++i]); }
-        else if (argv == '--svg-alignment-round') { renderOptions.alignmentRound = parseFloat(process.argv[++i]); }
+        else if (arg == '--svg-point') { renderOptions.moduleSize = parseFloat(args[++i]); }
+        else if (arg == '--svg-round') { renderOptions.moduleRound = parseFloat(args[++i]); }
+        else if (arg == '--svg-finder-round') { renderOptions.finderRound = parseFloat(args[++i]); }
+        else if (arg == '--svg-alignment-round') { renderOptions.alignmentRound = parseFloat(args[++i]); }
         // BMP renderer options
-        else if (argv == '--bmp-scale') { renderOptions.scale = parseFloat(process.argv[++i]); }
-        else if (argv == '--bmp-alpha') { renderOptions.alpha = true; }
+        else if (arg == '--bmp-scale') { renderOptions.scale = parseFloat(args[++i]); }
+        else if (arg == '--bmp-alpha') { renderOptions.alpha = true; }
         // End of options
-        else if (argv == '--') matchParams = false;
+        else if (arg == '--') matchParams = false;
         else {
-            console.error('ERROR: Unknown parameter: ' + argv);
+            console.error('ERROR: Unknown parameter: ' + arg);
             process.exit(1);
         }
     } else {
         //matchParams = false;
-        textParts.push(argv);
+        textParts.push(arg);
     }
 }
 
