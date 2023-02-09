@@ -21,7 +21,7 @@ deno run https://danielgjackson.github.io/qrcodejs/demo.mjs 'Hello, World!'
 ...or write out a QR Code to a file:
 
 ```bash
-deno run https://danielgjackson.github.io/qrcodejs/demo.mjs --output:svg --file hello.svg 'Hello, World!'
+deno run --allow-write https://danielgjackson.github.io/qrcodejs/demo.mjs --output:svg --file hello.svg 'Hello, World!'
 ```
 
 
