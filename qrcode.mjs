@@ -1064,11 +1064,14 @@ function renderSvg(matrix, options) {
         white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
         moduleSize: 1,
     }, options);
-
+    
+    const vbTopLeft = "${-matrix.quiet - options.moduleSize / 2}";
+    const vbWidthHeight = "${2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1}";
+    
     const lines = [];
     lines.push(`<?xml version="1.0"?>`);
     // viewport-fill=\"white\" 
-    lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="currentColor" viewBox="${-matrix.quiet} ${-matrix.quiet} ${2 * matrix.quiet + matrix.dimension} ${2 * matrix.quiet + matrix.dimension}" shape-rendering="crispEdges">`);
+    lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="currentColor" viewBox="${vbTopLeft} ${vbTopLeft} ${vbWidthHeight} ${vbWidthHeight}" shape-rendering="crispEdges">`);
     lines.push(`<title>${escape(matrix.text)}</title>`);
     //lines.push(`<desc>${escape(matrix.text)}</desc>`);
     lines.push(`<defs>`);
