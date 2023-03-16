@@ -1065,8 +1065,8 @@ function renderSvg(matrix, options) {
         moduleSize: 1,
     }, options);
     
-    const vbTopLeft = "${-matrix.quiet - options.moduleSize / 2}";
-    const vbWidthHeight = "${2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1}";
+    const vbTopLeft = `${-matrix.quiet - options.moduleSize / 2}`;
+    const vbWidthHeight = `${2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1}`;
     
     const lines = [];
     lines.push(`<?xml version="1.0"?>`);
