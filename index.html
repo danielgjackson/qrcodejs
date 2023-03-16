@@ -43,17 +43,8 @@
 <ul>
   <li>Generate a QR Code for your input.</li>
   <li>Open source repository: <a href="https://github.com/danielgjackson/qrcodejs">github.com/danielgjackson/qrcodejs</a></li>
-  <li>Simpler codes are easier to scan:
-	<ul>
-		<li>Keep the input as short as possible.</li>
-		<li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but probably best not to rely on this.</li>
-		<li>All-numeric text is the most compact, but all upper-case alphanumeric (with some symbols allowed) is more compat than mixed-case.</li>
-		<li>Do not use upper case for the URL past the domain name without first checking the server responds correctly.</li>
-	</ul>
-  </li>
-  <li>Include a written alternative for the URL.</li>
 </ul>
-
+	
 <div class="controls">
 	<label>Error correction level:
 		<select id="ecl">
@@ -93,6 +84,19 @@
   <svg></svg>
 </div>
 </details>
+
+<ul>
+  <li>Simpler codes are easier to scan:
+	<ul>
+		<li>Keep the input as short as possible.</li>
+		<li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but probably best not to rely on this.</li>
+		<li>All-numeric text is the most compact, but all upper-case alphanumeric (with some symbols allowed) is more compat than mixed-case.</li>
+		<li>Do not use upper case for the URL past the domain name without first checking the server responds correctly.</li>
+	</ul>
+  </li>
+  <li>Include a written alternative for the URL.</li>
+  <li>For WiFi QR codes, use the format: <code>WIFI:S:my_ssid;T:WPA;P:my_passphrase;;</code></li>
+</ul>
 
 <script type="module">
 import QrCode from './qrcode.mjs';
