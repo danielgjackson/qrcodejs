@@ -1,4 +1,4 @@
-/.vscode
 /_local
 _*
 *.svg
+.DS_Store
