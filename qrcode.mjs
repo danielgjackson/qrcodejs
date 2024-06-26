@@ -277,6 +277,7 @@ class Matrix {
         this.identity = new Array(capacity);
         this.quiet = Matrix.QUIET_STANDARD;
         this.invert = false;
+        this.text = null;
     }
 
     setModule(x, y, value, identity) {
@@ -529,7 +530,7 @@ class Matrix {
 }
 
 
-export default class QrCode {
+class QrCode {
 
     static VERSION_MIN = 1;
     static VERSION_MAX = 40;
@@ -797,7 +798,6 @@ export default class QrCode {
     constructor() {
     }
 
-
     static generate(text, userOptions) {
 
         // Generation options
@@ -807,8 +807,8 @@ export default class QrCode {
             maxVersion: QrCode.VERSION_MAX,
             optimizeEcc: true,
             maskPattern: null,
-            quiet: Matrix.QUIET_STANDARD,
-            invert: false,
+            quiet: Matrix.QUIET_STANDARD,   // only information for the renderer
+            invert: false,                  // only a flag for the renderer
         }, userOptions)
 
         // Allow either a single text string or an array of text strings likely to encode as different modes
@@ -839,6 +839,7 @@ export default class QrCode {
 
         // Create an empty matrix
         const matrix = new Matrix(version);
+        matrix.text = text;
         matrix.quiet = options.quiet;
         matrix.invert = options.invert;
 
@@ -868,5 +869,340 @@ export default class QrCode {
         return matrix;
     }
 
+    static render(mode, matrix, renderOptions) {
+        const renderers = {
+            'debug': renderDebug,
+            'large': renderTextLarge,
+            'medium': renderTextMedium,
+            'compact': renderTextCompact,
+            'svg': renderSvg,
+            'svg-uri': renderSvgUri,
+            'bmp': renderBmp,
+            'bmp-uri': renderBmpUri,
+        };
+        if (!renderers[mode]) throw new Error('ERROR: Invalid render mode: ' + mode);
+        return renderers[mode](matrix, renderOptions);
+    }
+
 }
 
+// Generate a bitmap from an array of [R,G,B] or [R,G,B,A] pixels
+function BitmapGenerate(data, width, height, alpha = false) {
+    const bitsPerPixel = alpha ? 32 : 24;
+    const fileHeaderSize = 14;
+    const bmpHeaderSizeByVersion = {
+        BITMAPCOREHEADER: 12,
+        BITMAPINFOHEADER: 40,
+        BITMAPV2INFOHEADER: 52,
+        BITMAPV3INFOHEADER: 56,
+        BITMAPV4HEADER: 108,
+        BITMAPV5HEADER: 124,
+    };
+    const version = alpha ? 'BITMAPV4HEADER' : 'BITMAPCOREHEADER'; // V3 provides alpha on Chrome, but V4 required for Firefox
+    if (!bmpHeaderSizeByVersion.hasOwnProperty(version))
+        throw `Unknown BMP header version: ${version}`;
+    const bmpHeaderSize = bmpHeaderSizeByVersion[version];
+    const stride = 4 * Math.floor((width * Math.floor((bitsPerPixel + 7) / 8) + 3) / 4); // Byte width of each line
+    const biSizeImage = stride * Math.abs(height); // Total number of bytes that will be written
+    const bfOffBits = fileHeaderSize + bmpHeaderSize; // + paletteSize
+    const bfSize = bfOffBits + biSizeImage;
+    const buffer = new ArrayBuffer(bfSize);
+    const view = new DataView(buffer);
+    // Write 14-byte BITMAPFILEHEADER
+    view.setUint8(0, 'B'.charCodeAt(0));
+    view.setUint8(1, 'M'.charCodeAt(0)); // @0 WORD bfType
+    view.setUint32(2, bfSize, true); // @2 DWORD bfSize
+    view.setUint16(6, 0, true); // @6 WORD bfReserved1
+    view.setUint16(8, 0, true); // @8 WORD bfReserved2
+    view.setUint32(10, bfOffBits, true); // @10 DWORD bfOffBits
+    if (bmpHeaderSize == bmpHeaderSizeByVersion.BITMAPCOREHEADER) { // (14+12=26) BITMAPCOREHEADER
+        view.setUint32(14, bmpHeaderSize, true); // @14 DWORD biSize
+        view.setUint16(18, width, true); // @18 WORD biWidth
+        view.setInt16(20, height, true); // @20 WORD biHeight
+        view.setUint16(22, 1, true); // @26 WORD biPlanes
+        view.setUint16(24, bitsPerPixel, true); // @28 WORD biBitCount
+    }
+    else if (bmpHeaderSize >= bmpHeaderSizeByVersion.BITMAPINFOHEADER) { // (14+40=54) BITMAPINFOHEADER
+        view.setUint32(14, bmpHeaderSize, true); // @14 DWORD biSize
+        view.setUint32(18, width, true); // @18 DWORD biWidth
+        view.setInt32(22, height, true); // @22 DWORD biHeight
+        view.setUint16(26, 1, true); // @26 WORD biPlanes
+        view.setUint16(28, bitsPerPixel, true); // @28 WORD biBitCount
+        view.setUint32(30, alpha ? 3 : 0, true); // @30 DWORD biCompression (0=BI_RGB, 3=BI_BITFIELDS, 6=BI_ALPHABITFIELDS on Win-CE-5)
+        view.setUint32(34, biSizeImage, true); // @34 DWORD biSizeImage
+        view.setUint32(38, 2835, true); // @38 DWORD biXPelsPerMeter
+        view.setUint32(42, 2835, true); // @42 DWORD biYPelsPerMeter
+        view.setUint32(46, 0, true); // @46 DWORD biClrUsed
+        view.setUint32(50, 0, true); // @50 DWORD biClrImportant
+    }
+    if (bmpHeaderSize >= bmpHeaderSizeByVersion.BITMAPV2INFOHEADER) { // (14+52=66) BITMAPV2INFOHEADER (+RGB BI_BITFIELDS)
+        view.setUint32(54, alpha ? 0x00ff0000 : 0x00000000, true); // @54 DWORD bRedMask
+        view.setUint32(58, alpha ? 0x0000ff00 : 0x00000000, true); // @58 DWORD bGreenMask
+        view.setUint32(62, alpha ? 0x000000ff : 0x00000000, true); // @62 DWORD bBlueMask
+    }
+    if (bmpHeaderSize >= bmpHeaderSizeByVersion.BITMAPV3INFOHEADER) { // (14+56=70) BITMAPV3INFOHEADER (+A BI_BITFIELDS)
+        view.setUint32(66, alpha ? 0xff000000 : 0x00000000, true); // @66 DWORD bAlphaMask
+    }
+    if (bmpHeaderSize >= bmpHeaderSizeByVersion.BITMAPV4HEADER) { // (14+108=122) BITMAPV4HEADER (color space and gamma correction)
+        const colorSpace = "Win "; // "BGRs";       // @ 70 DWORD bCSType
+        view.setUint8(70, colorSpace.charCodeAt(0));
+        view.setUint8(71, colorSpace.charCodeAt(1));
+        view.setUint8(72, colorSpace.charCodeAt(2));
+        view.setUint8(73, colorSpace.charCodeAt(3));
+        // @74 sizeof(CIEXYZTRIPLE)=36 (can be left empty for "Win ")
+        view.setUint32(110, 0, true); // @110 DWORD bGammaRed
+        view.setUint32(114, 0, true); // @114 DWORD bGammaGreen
+        view.setUint32(118, 0, true); // @118 DWORD bGammaBlue
+    }
+    if (bmpHeaderSize >= bmpHeaderSizeByVersion.BITMAPV5HEADER) { // (14+124=138) BITMAPV5HEADER (ICC color profile)
+        view.setUint32(122, 0x4, true); // @122 DWORD bIntent (0x1=LCS_GM_BUSINESS, 0x2=LCS_GM_GRAPHICS, 0x4=LCS_GM_IMAGES, 0x8=LCS_GM_ABS_COLORIMETRIC)
+        view.setUint32(126, 0, true); // @126 DWORD bProfileData
+        view.setUint32(130, 0, true); // @130 DWORD bProfileSize
+        view.setUint32(134, 0, true); // @134 DWORD bReserved
+    }
+    // If there was one, write the palette here (fileHeaderSize + bmpHeaderSize)
+    // Write pixels
+    for (let y = 0; y < height; y++) {
+        let offset = bfOffBits + (height - 1 - y) * stride;
+        for (let x = 0; x < width; x++) {
+            const value = data[y * width + x];
+            view.setUint8(offset + 0, value[2]); // B
+            view.setUint8(offset + 1, value[1]); // G
+            view.setUint8(offset + 2, value[0]); // R
+            if (alpha) {
+                view.setUint8(offset + 3, value[3]); // A
+                offset += 4;
+            }
+            else {
+                offset += 3;
+            }
+        }
+    }
+    return buffer;
+}
+
+
+function renderDebug(matrix, options) {
+    options = Object.assign({
+        segments: ['  ', '██'],
+        sep: '\n',
+    }, options);
+    const lines = [];
+    for (let y = -matrix.quiet; y < matrix.dimension + matrix.quiet; y++) {
+        const parts = [];
+        for (let x = -matrix.quiet; x < matrix.dimension + matrix.quiet; x++) {
+            let part = matrix.identifyModule(x, y);
+            const bit = matrix.getModule(x, y) ? !matrix.invert : matrix.invert;
+            const value = bit ? 1 : 0;
+            if (typeof part == 'undefined' || part === null) part = options.segments[value];
+            parts.push(part);
+        }
+        lines.push(parts.join(''));
+    }    
+    return lines.join(options.sep);
+}
+
+function renderTextLarge(matrix, options) {
+    options = Object.assign({
+        segments: ['  ', '██'],
+        sep: '\n',
+    }, options);
+    const lines = [];
+    for (let y = -matrix.quiet; y < matrix.dimension + matrix.quiet; y++) {
+        const parts = [];
+        for (let x = -matrix.quiet; x < matrix.dimension + matrix.quiet; x++) {
+            const bit = matrix.getModule(x, y) ? !matrix.invert : matrix.invert;
+            const value = bit ? 1 : 0;
+            // If an additional segment type is specified, use it to identify data modules differently
+            const chars = (options.segments.length >= 3 && bit && !matrix.identifyModule(x, y)) ? options.segments[2] : options.segments[value];
+            parts.push(chars);
+        }
+        lines.push(parts.join(''));
+    }    
+    return lines.join(options.sep);
+}
+
+function renderTextMedium(matrix, options) {
+    options = Object.assign({
+        segments: [' ', '▀', '▄', '█'],
+        sep: '\n',
+    }, options);
+    const lines = [];
+    for (let y = -matrix.quiet; y < matrix.dimension + matrix.quiet; y += 2) {
+        const parts = [];
+        for (let x = -matrix.quiet; x < matrix.dimension + matrix.quiet; x++) {
+            const upper = matrix.getModule(x, y) ? !matrix.invert : matrix.invert;
+            const lower = (y + 1 < matrix.dimension ? matrix.getModule(x, y + 1) : 0) ? !matrix.invert : matrix.invert;
+            const value = (upper ? 0x01 : 0) | (lower ? 0x02 : 0);
+            // '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
+            const c = options.segments[value];
+            parts.push(c);
+        }
+        lines.push(parts.join(''));
+    }    
+    return lines.join(options.sep);
+}
+
+function renderTextCompact(matrix, options) {
+    options = Object.assign({
+        segments: [' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█'],
+        sep: '\n',
+    }, options);
+    const lines = [];
+    for (let y = -matrix.quiet; y < matrix.dimension + matrix.quiet; y += 2) {
+        const parts = [];
+        for (let x = -matrix.quiet; x < matrix.dimension + matrix.quiet; x += 2) {
+            let value = 0;
+            value |= (matrix.getModule(x, y) ? !matrix.invert : matrix.invert) ? 0x01 : 0x00;
+            value |= (((x + 1 < matrix.dimension) ? matrix.getModule(x + 1, y) : 0) ? !matrix.invert : matrix.invert) ? 0x02 : 0x00;
+            value |= (((y + 1 < matrix.dimension) ? matrix.getModule(x, y + 1) : 0) ? !matrix.invert : matrix.invert) ? 0x04 : 0x00;
+            value |= (((y + 1 < matrix.dimension) && (x + 1 < matrix.dimension) ? matrix.getModule(x + 1, y + 1) : 0) ? !matrix.invert : matrix.invert) ? 0x08 : 0x00;
+            let c = options.segments[value];
+            parts.push(c);
+        }
+        lines.push(parts.join(''));
+    }    
+    return lines.join(options.sep);
+}
+
+function escape(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/\'/g, "&apos;");
+}
+
+function renderSvg(matrix, options) {
+    options = Object.assign({
+        moduleRound: null,
+        finderRound: null,
+        alignmentRound: null,
+        white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
+        moduleSize: 1,
+    }, options);
+    
+    const vbTopLeft = `${-matrix.quiet - options.moduleSize / 2}`;
+    const vbWidthHeight = `${2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1}`;
+    
+    const lines = [];
+    lines.push(`<?xml version="1.0"?>`);
+    // viewport-fill=\"white\" 
+    lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="currentColor" viewBox="${vbTopLeft} ${vbTopLeft} ${vbWidthHeight} ${vbWidthHeight}" shape-rendering="crispEdges">`);
+    lines.push(`<title>${escape(matrix.text)}</title>`);
+    //lines.push(`<desc>${escape(matrix.text)}</desc>`);
+    lines.push(`<defs>`);
+
+    // module data bit (dark)
+    lines.push(`<rect id="b" x="${-options.moduleSize / 2}" y="${-options.moduleSize / 2}" width="${options.moduleSize}" height="${options.moduleSize}" rx="${0.5 * (options.moduleRound || 0) * options.moduleSize}" />`);
+
+    // module data bit (light). 
+    if (options.white) { // Light modules as a ref to a placeholder empty element
+        lines.push(`<path id="w" d="" visibility="hidden" />`);
+    }
+
+    // Use one item for the finder marker
+    if (options.finderRound != null) {
+        // Hide finder module, use finder part
+        lines.push(`<path id="f" d="" visibility="hidden" />`);
+        if (options.white) lines.push(`<path id="fw" d="" visibility="hidden" />`);
+        lines.push(`<g id="fc"><rect x="-3" y="-3" width="6" height="6" rx="${3.0 * options.finderRound}" stroke="currentColor" stroke-width="1" fill="none" /><rect x="-1.5" y="-1.5" width="3" height="3" rx="${1.5 * options.finderRound}" /></g>`);
+        lines.push(`<g id="fc"><rect x="-3" y="-3" width="6" height="6" rx="${3.0 * options.finderRound}" stroke="currentColor" stroke-width="1" fill="none" /><rect x="-1.5" y="-1.5" width="3" height="3" rx="${1.5 * options.finderRound}" /></g>`);
+    } else {
+        // Use normal module for finder module, hide finder part
+        lines.push(`<use id="f" xlink:href="#b" />`);
+        if (options.white) lines.push(`<use id="fw" xlink:href="#w" />`);
+        lines.push(`<path id="fc" d="" visibility="hidden" />`);
+    }
+
+    // Use one item for the alignment marker
+    if (options.alignmentRound != null) {
+        // Hide alignment module, use alignment part
+        lines.push(`<path id="a" d="" visibility="hidden" />`);
+        if (options.white) lines.push(`<path id="aw" d="" visibility="hidden" />`);
+        lines.push(`<g id="ac"><rect x="-2" y="-2" width="4" height="4" rx="${2.0 * options.alignmentRound}" stroke="currentColor" stroke-width="1" fill="none" /><rect x="-0.5" y="-0.5" width="1" height="1" rx="${0.5 * options.alignmentRound}" /></g>`);
+    } else {
+        // Use normal module for alignment module, hide alignment part
+        lines.push(`<use id="a" xlink:href="#b" />`);
+        if (options.white) lines.push(`<use id="aw" xlink:href="#w" />`);
+        lines.push(`<path id="ac" d="" visibility="hidden" />`);
+    }
+
+    lines.push(`</defs>`);
+
+    for (let y = 0; y < matrix.dimension; y++) {
+        for (let x = 0; x < matrix.dimension; x++) {
+            const mod = matrix.identifyModule(x, y);
+            let bit = matrix.getModule(x, y);
+            // IMPORTANT: Inverting the output for SVGs will not be correct if a single finder pattern is used (it would need inverting)
+            if (matrix.invert) bit = !bit;
+            let type = bit ? 'b' : 'w';
+
+            // Draw finder/alignment as modules (define to nothing if drawing as whole parts)
+            if (mod == 'Fi' || mod == 'FI') { type = bit ? 'f' : 'fw'; }
+            else if (mod == 'Al' || mod == 'AL') { type = bit ? 'a' : 'aw'; }
+
+            if (bit || options.white) {
+                lines.push(`<use x="${x}" y="${y}" xlink:href="#${type}" />`);
+            }
+        }
+    }
+
+    // Draw finder/alignment as whole parts (define to nothing if drawing as modules)
+    for (let y = 0; y < matrix.dimension; y++) {
+        for (let x = 0; x < matrix.dimension; x++) {
+            const mod = matrix.identifyModule(x, y);
+            let type = null;
+            if (mod == 'FI') type = 'fc';
+            else if (mod == 'AL') type = 'ac';
+            if (type == null) continue;
+            lines.push(`<use x="${x}" y="${y}" xlink:href="#${type}" />`);
+        }
+    }
+
+    lines.push(`</svg>`);
+
+    const svgString = lines.join('\n');
+    return svgString;
+}
+
+function renderSvgUri(matrix, options) {
+    return 'data:image/svg+xml,' + encodeURIComponent(renderSvg(matrix, options));
+}
+
+function renderBmp(matrix, options) {
+    options = Object.assign({
+        scale: 8,
+        alpha: false,
+        width: null,
+        height: null,
+    }, options);
+    const size = matrix.dimension + 2 * matrix.quiet;
+    if (options.width === null) options.width = Math.floor(size * options.scale);
+    if (options.height === null) options.height = options.width;
+
+    const colorData = Array(options.width * options.height).fill(null);
+    for (let y = 0; y < options.height; y++) {
+        const my = Math.floor(y * size / options.height) - matrix.quiet;
+        for (let x = 0; x < options.width; x++) {
+            const mx = Math.floor(x * size / options.width) - matrix.quiet;
+            let bit = matrix.getModule(mx, my);
+            let color;
+            if (matrix.invert) {
+                color = bit ? [255, 255, 255, 255] : [0, 0, 0, 0];
+            } else {
+                color = bit ? [0, 0, 0, 255] : [255, 255, 255, 0];
+            }
+            colorData[y * options.width + x] = color;
+        }
+    }
+
+    const bmpData = BitmapGenerate(colorData, options.width, options.height, options.alpha);
+    return bmpData;
+}
+
+function renderBmpUri(matrix, options) {
+    const bmpData = renderBmp(matrix, options);
+    const encoded = btoa(new Uint8Array(bmpData).reduce((data, v) => data + String.fromCharCode(v), ''))
+    return 'data:image/bmp;base64,' + encoded;
+}
+
+
+// Comment-out the following line to convert this into a non-module .js file (e.g. for use in a <script src> tag over the file: protocol)
+export default QrCode

@@ -5,7 +5,7 @@
   "main": "qrcode.mjs",
   "type": "module",
   "scripts": {
-    "start": "node demo.mjs",
+    "start": "node qrcli.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
