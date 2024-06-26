@@ -447,7 +447,7 @@ class Matrix {
     evaluatePenalty() {
         // Note: Penalty calculated over entire code (although format information is not yet written)
         const scoreN1 = 3;
-        //const scoreN2 = 3;
+        const scoreN2 = 3;
         const scoreN3 = 40;
         const scoreN4 = 10;
         let totalPenalty = 0;
@@ -495,8 +495,16 @@ class Matrix {
         }
 
         // Feature 2: Block of identical modules: m * n size, penalty points: N2 * (m-1) * (n-1)
-// TODO: Calculate feature 2 penalty. (Clear up ambiguity over "block" and counting the same "block" overlapped multiple times)
-        ; // scoreN2
+        // (fix from @larsbrinkhoff pull request #3 to danielgjackson/qrcode)
+        for (let y = 0; y < this.dimension - 1; y++) {
+            for (let x = 0; x < this.dimension - 1; x++) {
+                let bits = this.getModule(x, y);
+                bits += this.getModule(x+1, y);
+                bits += this.getModule(x, y+1);
+                bits += this.getModule(x+1, y+1);
+                if (bits == 0 || bits == 4) totalPenalty += scoreN2;
+            }
+        }
 
         // Feature 4: Dark module percentage: 50 +|- (5*k) to 50 +|- (5*(k+1)), penalty points: N4 * k
         {
@@ -724,7 +732,7 @@ export default class QrCode {
         matrix.cursorReset();
         let totalWritten = 0;
 
-        // Write data codewords interleaved accross ecc blocks -- some early blocks may be short
+        // Write data codewords interleaved across ecc blocks -- some early blocks may be short
         for (let i = 0; i < dataLenLong; i++) {
             for (let block = 0; block < eccBlockCount; block++) {
                 // Calculate offset and length (earlier consecutive blocks may be short by 1 codeword)
@@ -737,7 +745,7 @@ export default class QrCode {
             }
         }
 
-        // Write ECC codewords interleaved accross ecc blocks
+        // Write ECC codewords interleaved across ecc blocks
         for (let i = 0; i < eccCodewords; i++) {
             for (let block = 0; block < eccBlockCount; block++) {
                 const sourceBit = 8 * eccOffset + (block * eccCodewords * 8) + (i * 8);
@@ -758,12 +766,17 @@ export default class QrCode {
   
 
     //
-    static findOptimalMaskPattern(matrix) {
+    static findOptimalMaskPattern(matrix, errorCorrectionLevel) {
         let lowestPenalty = -1;
         let bestMaskPattern = null;
         for (let maskPattern = 0; maskPattern <= 7; maskPattern++) {
             // XOR mask pattern
             matrix.applyMaskPattern(maskPattern);
+
+            // Write format information before evaluating penalty
+            // (fix from @larsbrinkhoff pull request #2 to danielgjackson/qrcode)
+            const formatInfo = QrCode.calculateFormatInfo(errorCorrectionLevel, maskPattern);
+            matrix.drawFormatInfo(formatInfo);
 
             // Find penalty score for this mask pattern
             const penalty = matrix.evaluatePenalty();
@@ -838,7 +851,7 @@ export default class QrCode {
         // Calculate the optimal mask pattern
         let maskPattern = options.maskPattern;
         if (maskPattern === null) {
-            maskPattern = QrCode.findOptimalMaskPattern(matrix);
+            maskPattern = QrCode.findOptimalMaskPattern(matrix, errorCorrectionLevel);
         }
 
         // Apply the chosen mask pattern
