@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Javascript QR Code generator.",
   "main": "qrcode.mjs",
+  "types": "qrcode.d.mts",
   "type": "module",
   "scripts": {
     "start": "node qrcli.mjs",
