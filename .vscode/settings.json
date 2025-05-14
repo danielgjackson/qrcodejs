@@ -24,6 +24,7 @@
         "qrcli",
         "qrcode",
         "qrcodejs",
+        "sixel",
         "svguri",
         "xlink"
     ]

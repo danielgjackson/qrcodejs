@@ -41,6 +41,8 @@ for (let i = 0; i < args.length; i++) {
         // BMP renderer options
         else if (arg == '--bmp-scale') { renderOptions.scale = parseFloat(args[++i]); }
         else if (arg == '--bmp-alpha') { renderOptions.alpha = true; }
+        // Sixel rendered options
+        else if (arg == '--sixel-scale') { renderOptions.scale = parseFloat(args[++i]); }
         // End of options
         else if (arg == '--') matchParams = false;
         else {

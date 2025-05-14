@@ -879,6 +879,7 @@ class QrCode {
             'svg-uri': renderSvgUri,
             'bmp': renderBmp,
             'bmp-uri': renderBmpUri,
+            'sixel': renderSixel,
         };
         if (!renderers[mode]) throw new Error('ERROR: Invalid render mode: ' + mode);
         return renderers[mode](matrix, renderOptions);
@@ -1063,6 +1064,50 @@ function renderTextCompact(matrix, options) {
         lines.push(parts.join(''));
     }    
     return lines.join(options.sep);
+}
+
+
+function renderSixel(matrix, options) {
+    const LINE_HEIGHT = 6;
+    options = Object.assign({
+        scale: 4,
+    }, options);
+    const parts = [];
+    // Enter sixel mode
+    parts.push('\x1BP7;1q');    // 1:1 ratio, 0 pixels remain at current color
+    // Set color map
+    parts.push('#0;2;0;0;0');       // Background
+    parts.push('#1;2;100;100;100');
+    for (let y = -matrix.quiet * options.scale; y < (matrix.dimension + matrix.quiet) * options.scale; y += LINE_HEIGHT) {
+        const passes = 2;
+        for (let pass = 0; pass < passes; pass++) {
+            // Start a pass in a specific color
+            parts.push('#' + pass);
+            // Line data
+            for (let x = -matrix.quiet * options.scale; x < (matrix.dimension + matrix.quiet) * options.scale; x += options.scale) {
+                let value = 0;
+                for (let yy = 0; yy < LINE_HEIGHT; yy++) {
+                    const module = (matrix.getModule(Math.round(x / options.scale), Math.round((y + yy) / options.scale)) ? !matrix.invert : matrix.invert) ? 0 : 1;
+                    const bit = (module == pass) ? 1 : 0;
+                    value |= (bit ? 0x01 : 0x00) << yy;
+                }
+                const code = '!' + options.scale + String.fromCharCode(value + 63);
+                // Six pixels strip at 'scale' (repeated) width
+                parts.push(code);
+            }
+            // Return to start of the line
+            if (pass + 1 < passes) {
+                parts.push('$');
+            }
+        }
+        // Next line
+        if (y + LINE_HEIGHT < (matrix.dimension + matrix.quiet) * options.scale) {
+            parts.push('-');
+        }
+    }
+    // Exit sixel mode
+    parts.push('\x1B\\');
+    return parts.join('');
 }
 
 function escape(text) {
