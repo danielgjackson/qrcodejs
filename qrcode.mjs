@@ -1087,7 +1087,7 @@ function renderSixel(matrix, options) {
             for (let x = -matrix.quiet * options.scale; x < (matrix.dimension + matrix.quiet) * options.scale; x += options.scale) {
                 let value = 0;
                 for (let yy = 0; yy < LINE_HEIGHT; yy++) {
-                    const module = (matrix.getModule(Math.round(x / options.scale), Math.round((y + yy) / options.scale)) ? !matrix.invert : matrix.invert) ? 0 : 1;
+                    const module = (matrix.getModule(Math.floor(x / options.scale), Math.floor((y + yy) / options.scale)) ? !matrix.invert : matrix.invert) ? 0 : 1;
                     const bit = (module == pass) ? 1 : 0;
                     value |= (bit ? 0x01 : 0x00) << yy;
                 }
