@@ -22,11 +22,14 @@ export interface GenerateOptions {
   quiet?: number
 }
 
-export type RenderMode = 'large' | 'medium' | 'compact' | 'svg' | 'bmp' | 'svg-uri' | 'bmp-uri'
+export type RenderMode = 'large' | 'medium' | 'compact' | 'svg' | 'bmp' | 'svg-uri' | 'bmp-uri' | 'sixel'
 
-export type RenderOptions = SvgRenderOptions | BmpRenderOptions
+export type RenderOptions = SvgRenderOptions | BmpRenderOptions | SixelRenderOptions
 
 export interface SvgRenderOptions {
+  /** (svg / svg-uri only) the color of each module (default: 'currentColor') */
+  color?: string
+  
   /** (svg / svg-uri only) the unit dimensions of each module */
   moduleSize?: number
   
@@ -57,6 +60,11 @@ export interface BmpRenderOptions {
   height?: boolean
 }
 
+export interface SixelRenderOptions {
+  /** (sixel) for the size of a module */
+  scale?: number
+}
+
 export class Matrix {}
 
 export default class QrCode {
@@ -66,4 +74,5 @@ export default class QrCode {
   static render(mode: 'svg' | 'svg-uri', matrix: Matrix, options?: SvgRenderOptions): string
   static render(mode: 'bmp', matrix: Matrix, options?: BmpRenderOptions): Uint8Array
   static render(mode: 'bmp-uri', matrix: Matrix, options?: BmpRenderOptions): string
+  static render(mode: 'sixel', matrix: Matrix, options?: SixelRenderOptions): string
 }
