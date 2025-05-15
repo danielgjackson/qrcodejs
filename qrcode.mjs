@@ -1091,7 +1091,7 @@ function renderSixel(matrix, options) {
                     const bit = (module == pass) ? 1 : 0;
                     value |= (bit ? 0x01 : 0x00) << yy;
                 }
-                const code = '!' + options.scale + String.fromCharCode(value + 63);
+                const code = (options.scale > 3 ? '!' + options.scale : '') + String.fromCharCode(value + 63).repeat(options.scale <= 3 ? options.scale : 1);
                 // Six pixels strip at 'scale' (repeated) width
                 parts.push(code);
             }
