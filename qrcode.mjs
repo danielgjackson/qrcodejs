@@ -880,6 +880,7 @@ class QrCode {
             'bmp': renderBmp,
             'bmp-uri': renderBmpUri,
             'sixel': renderSixel,
+            'tgp': renderTerminalGraphicsProtocol,
         };
         if (!renderers[mode]) throw new Error('ERROR: Invalid render mode: ' + mode);
         return renderers[mode](matrix, renderOptions);
@@ -1109,6 +1110,70 @@ function renderSixel(matrix, options) {
     parts.push('\x1B\\');
     return parts.join('');
 }
+
+function renderTerminalGraphicsProtocol(matrix, options) {
+    options = Object.assign({
+        scale: 4,
+        alpha: false,
+    }, options);
+    const alpha = options.alpha;
+    const scale = options.scale;
+    const width = matrix.dimension + (2 * matrix.quiet);
+    const height = matrix.dimension + (2 * matrix.quiet);
+    const MAX_CHUNK_SIZE = 4096;
+
+    // Create buffer for scaled image data
+    const buffer = new Uint8Array((width * scale) * (height * scale) * (alpha ? 4 : 3));
+    for (let y = 0; y < height * scale; y++) {
+      for (let x = 0; x < width * scale; x++) {
+        let z = matrix.getModule(Math.floor(x / scale) - matrix.quiet, Math.floor(y / scale) - matrix.quiet);
+        if (matrix.invert) z = !z;
+        const c = z ? [0, 0, 0, 0] : [255, 255, 255, 255];
+        if (c == null) continue;
+        const ofs = (y * (width * scale) + x) * (alpha ? 4 : 3);
+        buffer[ofs + 0] = c[0]; // r
+        buffer[ofs + 1] = c[1]; // g
+        buffer[ofs + 2] = c[2]; // b
+        if (alpha) buffer[ofs + 3] = c[3]; // a
+      }
+    }
+
+    // Convert to base64
+    let encodedParts = [];
+    // Manual code to convert to base64
+    const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    for (let i = 0; i < buffer.byteLength; i += 3) {
+        let b1 = buffer[i];
+        let b2 = (i + 1 < buffer.byteLength) ? buffer[i + 1] : 0;
+        let b3 = (i + 2 < buffer.byteLength) ? buffer[i + 2] : 0;
+        let combined = (b1 << 16) | (b2 << 8) | (b3 << 0);
+        encodedParts.push(base64Chars[(combined >> 18) & 0x3F]);
+        encodedParts.push(base64Chars[(combined >> 12) & 0x3F]);
+        encodedParts.push(base64Chars[(combined >>  6) & 0x3F]);
+        encodedParts.push(base64Chars[(combined >>  0) & 0x3F]);
+    }
+    // Handle padding
+    if (buffer.byteLength % 3 === 1) {
+        encodedParts[encodedParts.byteLength - 1] = '=';
+        encodedParts[encodedParts.byteLength - 2] = '=';
+    } else if (buffer.byteLength % 3 === 2) {
+        encodedParts[encodedParts.byteLength - 1] = '=';
+    }
+    const encoded = encodedParts.join('');
+
+    // Chunked output
+    const parts = [];
+    for (let i = 0; i < encoded.length; i += MAX_CHUNK_SIZE) {
+        const chunk = encoded.slice(i, i + MAX_CHUNK_SIZE);
+        // action transmit and display (a=T), direct transfer (t=d), uncompressed (o=), 3/4 bytes per pixel (f=24/32 bits per pixel), no responses at all (q=2)
+        const initialControls = (i == 0) ? `a=T,f=${alpha ? 32 : 24},s=${width * scale},v=${height * scale},t=d,q=2,` : '';
+        const nonTerminal = (i + MAX_CHUNK_SIZE < encoded.length) ? 1 : 0;
+        parts.push(`\x1B_G${initialControls}m=${nonTerminal};${chunk}\x1B\\`);
+    }
+
+    return parts.join('');
+}
+
 
 function escape(text) {
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/\'/g, "&apos;");

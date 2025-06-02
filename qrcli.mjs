@@ -38,11 +38,12 @@ for (let i = 0; i < args.length; i++) {
         else if (arg == '--svg-round') { renderOptions.moduleRound = parseFloat(args[++i]); }
         else if (arg == '--svg-finder-round') { renderOptions.finderRound = parseFloat(args[++i]); }
         else if (arg == '--svg-alignment-round') { renderOptions.alignmentRound = parseFloat(args[++i]); }
-        // BMP renderer options
-        else if (arg == '--bmp-scale') { renderOptions.scale = parseFloat(args[++i]); }
+        // Alpha options
+        else if (arg == '--alpha') { renderOptions.alpha = true; }
         else if (arg == '--bmp-alpha') { renderOptions.alpha = true; }
-        // Sixel rendered options
-        else if (arg == '--sixel-scale') { renderOptions.scale = parseFloat(args[++i]); }
+        // Scale options
+        else if (arg == '--scale') { renderOptions.scale = parseFloat(args[++i]); }
+        else if (arg == '--bmp-scale') { renderOptions.scale = parseFloat(args[++i]); }
         // End of options
         else if (arg == '--') matchParams = false;
         else {
@@ -56,7 +57,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (programOptions.help) {
-    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|bmp|svg>] [--file filename] <text>');
+    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|bmp|svg|sixel|tgp>] [--file filename] <text>');
     console.log('')
     console.log('For --output:svg:  [--svg-point 1.0] [--svg-round 0.0] [--svg-finder-round 0.0] [--svg-alignment-round 0.0]');
 
