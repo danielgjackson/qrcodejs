@@ -881,6 +881,7 @@ class QrCode {
             'bmp-uri': renderBmpUri,
             'sixel': renderSixel,
             'tgp': renderTerminalGraphicsProtocol,
+            'iip': renderInlineImagesProtocol,
         };
         if (!renderers[mode]) throw new Error('ERROR: Invalid render mode: ' + mode);
         return renderers[mode](matrix, renderOptions);
@@ -1111,6 +1112,8 @@ function renderSixel(matrix, options) {
     return parts.join('');
 }
 
+
+// TGP - Terminal Graphics Protocol (KiTTY, etc.) - https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
 function renderTerminalGraphicsProtocol(matrix, options) {
     options = Object.assign({
         scale: 4,
@@ -1171,6 +1174,42 @@ function renderTerminalGraphicsProtocol(matrix, options) {
         parts.push(`\x1B_G${initialControls}m=${nonTerminal};${chunk}\x1B\\`);
     }
 
+    return parts.join('');
+}
+
+
+// IIP - Inline images protocol (iTerm2, etc.) - https://iterm2.com/documentation-images.html
+function renderInlineImagesProtocol(matrix, options) {
+    // TODO: Generate bitmap at scale=1 and just render at a scaled-up width/height
+    const bmpData = renderBmp(matrix, options);
+    const encoded = btoa(new Uint8Array(bmpData).reduce((data, v) => data + String.fromCharCode(v), ''))
+    const chunked = (options != null && options.hasOwnProperty('chunked')) ? options.chunked : true;
+
+    const parts = [];
+    if (chunked) {
+        parts.push('\x1B]1337;MultipartFile=');
+    } else {
+        parts.push('\x1B]1337;File=');
+    }
+    parts.push('name=' + btoa('qrcode.bmp') + ';');
+    parts.push('size=' + bmpData.byteLength + ';');
+    parts.push('width=' + bmpData.width + 'px;');
+    parts.push('height=' + bmpData.height + 'px;');
+    parts.push('preserveAspectRatio=1;');
+    parts.push('inline=1;');
+    if (chunked) {
+        parts.push('\x07');
+        // Chunked output
+        const MAX_CHUNK_SIZE = 65536;
+        for (let i = 0; i < encoded.length; i += MAX_CHUNK_SIZE) {
+            const chunk = encoded.slice(i, i + MAX_CHUNK_SIZE);
+            parts.push('\x1B]1337;FilePart=', chunk, '\x07');
+        }
+        parts.push('\x1B]1337;FileEnd\x07');
+    } else {
+        // Whole image
+        parts.push(':', encoded, '\x07');
+    }
     return parts.join('');
 }
 
@@ -1305,6 +1344,9 @@ function renderBmp(matrix, options) {
     }
 
     const bmpData = BitmapGenerate(colorData, options.width, options.height, options.alpha);
+    bmpData.width = options.width;
+    bmpData.height = options.height;
+    bmpData.alpha = options.alpha;
     return bmpData;
 }
 

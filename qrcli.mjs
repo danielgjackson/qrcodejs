@@ -57,7 +57,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (programOptions.help) {
-    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|bmp|svg|sixel|tgp>] [--file filename] <text>');
+    console.log('USAGE: [--ecl:<l|m|q|h>] [--uppercase] [--invert] [--quiet 4] [--output:<large|medium|compact|bmp|svg|sixel|tgp|iip>] [--file filename] <text>');
     console.log('')
     console.log('For --output:svg:  [--svg-point 1.0] [--svg-round 0.0] [--svg-finder-round 0.0] [--svg-alignment-round 0.0]');
 
