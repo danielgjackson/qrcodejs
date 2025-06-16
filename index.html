@@ -33,7 +33,8 @@
 		cursor: copy;
 	}
 	#output_img img, #output_svg svg {
-		max-width: 50vw;
+		width: 50vw;
+		max-width: 75vmin;
 	}
 	</style>
 </head>
@@ -71,15 +72,18 @@
 </div>
 </details>
 
-<details open>
+<details>
 <summary>Image &lt;img&gt;</summary>
 <div id="output_img">
   <img src="" alt="">
 </div>
 </details>
 
-<details>
+<details open>
 <summary>Image &lt;svg&gt;</summary>
+<div>
+	<label><input type="checkbox" id="rounded" checked>Rounded</label>
+</div>
 <div id="output_svg">
   <svg></svg>
 </div>
@@ -90,11 +94,11 @@
 	<ul>
 		<li>Keep the input as short as possible.</li>
 		<li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but probably best not to rely on this.</li>
-		<li>All-numeric text is the most compact, but all upper-case alphanumeric (with some symbols allowed) is more compat than mixed-case.</li>
-		<li>Do not use upper case for the URL past the domain name without first checking the server responds correctly.</li>
+		<li>All upper-case alphanumeric (with some, e.g. URL, symbols allowed) is more compat than mixed-case, but be careful that any path part may be case sensitive, and some readers may not like the protocol in capital letters.</li>
 	</ul>
   </li>
-  <li>Include a written alternative for the URL.</li>
+  <li>Always include a written alternative for the URL.</li>
+  <li>Always place the QR code on a 'quiet' area: light on a standard code (if the code is inverted, it should be placed on a dark background).</li>
   <li>For WiFi QR codes, use the format: <code>WIFI:S:my_ssid;T:WPA;P:my_passphrase;;</code></li>
 </ul>
 
@@ -128,7 +132,19 @@ function change() {
 		const matrix = QrCode.generate(input, qrOptions);
 		text = renderHtml(matrix);
 		const renderOptions = {
+			color: 'currentColor',
+			moduleRound: null,      // 1.0 looks nice
+			finderRound: null,      // 0.5 looks nice
+			alignmentRound: null,
+			white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
+			moduleSize: 1,
 		};
+
+		if (document.querySelector('#rounded').checked) {
+			renderOptions.moduleRound = 1.0;
+			renderOptions.finderRound = 0.5;
+		}
+
 		svg = QrCode.render('svg', matrix, renderOptions);
 	} catch (e) {
 		text = 'Error: ' + e;
@@ -157,7 +173,11 @@ function copyMultiLinePlainTextToClipboard(text) {
 }
 
 function safeFilename(text) {
-	return text.replaceAll(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+	text = text.replace(/^https?:\/\//i, '');
+	text = text.replaceAll(/[^a-zA-Z0-9_.-]/g, '_').toLowerCase();
+	text = text.replaceAll(/\.+/g, '.');
+	text = text.replaceAll(/_+/g, '_');
+	return text;
 }
 
 async function dataUriToBlob(dataUri) {
@@ -312,7 +332,7 @@ async function click_img() {
 	const svg = decodeURIComponent(element.src.split(',').slice(1).join(''));
 	//const imgSrc = element.src;
 	//copySvgToClipboard(svg, imgSrc, element);
-	downloadBlob(svgToBlob(svg), safeFilename(element.alt) + '.svg');
+	downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
 }
 
 function click_svg() {
@@ -327,6 +347,7 @@ function start() {
 	document.querySelector('#text').addEventListener('focus', focus);
 	document.querySelector('#text').addEventListener('input', change);
 	document.querySelector('#ecl').addEventListener('change', change);
+	document.querySelector('#rounded').addEventListener('change', change);
 	document.querySelector('#output_text').addEventListener('click', click_text);
 	document.querySelector('#output_img img').addEventListener('click', click_img);
 	document.querySelector('#output_svg').addEventListener('click', click_svg);
