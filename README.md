@@ -113,8 +113,12 @@ Returns a *matrix* that can be passed to the `render()` function.
 
 * `options` - the configuration object (optional), depends on the chosen rendering `mode`:
 
-  * `svg` / `svg-uri`: `moduleSize` the unit dimensions of each module, `white` (boolean) output the non-set modules (otherwise will be transparent background), `moduleRound` proportion of how rounded the modules are, `finderRound` to hide the standard finder modules and instead output a shape with the specified roundness, `alignmentRound` to hide the standard alignment modules and instead output a shape with the specified roundness.
+  * `svg` / `svg-uri`: `color` the color of each module (default: 'currentColor'), `moduleSize` the unit dimensions of each module, `white` (boolean) output the non-set modules (otherwise will be transparent background), `moduleRound` proportion of how rounded the modules are, `finderRound` to hide the standard finder modules and instead output a shape with the specified roundness, `alignmentRound` to hide the standard alignment modules and instead output a shape with the specified roundness
 
   * `bmp` / `bmp-uri`: `scale` for the size of a module, `alpha` (boolean) to use a transparent background, `width`/`height` can set a specific image size (rather than scaling the matrix dimensions).
 
+  * `png`: `size` for the width and height of the image, `background` color of the image, `color,moduleRound,finderRound,alignmentRound` from SVG options
+
 Returns the text or binary output from the chosen `mode`.
+
+> **NOTE** png rendering returns a `Promise<Blob>` that needs to be awaited
