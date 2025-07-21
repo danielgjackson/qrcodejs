@@ -883,6 +883,9 @@ class QrCode {
             'tgp': renderTerminalGraphicsProtocol,
             'iip': renderInlineImagesProtocol,
         };
+        if (canRenderPng()) {
+            renderers['png'] = renderPngBlob
+        }
         if (!renderers[mode]) throw new Error('ERROR: Invalid render mode: ' + mode);
         return renderers[mode](matrix, renderOptions);
     }
@@ -1354,6 +1357,40 @@ function renderBmpUri(matrix, options) {
     const bmpData = renderBmp(matrix, options);
     const encoded = btoa(new Uint8Array(bmpData).reduce((data, v) => data + String.fromCharCode(v), ''))
     return 'data:image/bmp;base64,' + encoded;
+}
+
+function canRenderPng() {
+    return typeof URL === 'function' && typeof Image === 'function'
+        && typeof OffscreenCanvas === 'function'
+}
+
+async function renderPngBlob(matrix, { size = 1024, background = 'transparent', ...svgOptions }) {
+
+    // Create and load an HTML Image containing the SVG
+    const image = new Image(size, size)
+    image.src = renderSvgUri(matrix, {
+        ...svgOptions,
+        white: false,
+        moduleRound: 1,
+        finderRound: 0.5
+    })
+    await new Promise(r => image.addEventListener('load', r, { once: true }))
+
+    // Create a canvas to draw the image to
+    const canvas = new OffscreenCanvas(size, size)
+    const ctx = canvas.getContext('2d')
+
+    // First draw the background colour
+    ctx.beginPath()
+    ctx.fillStyle = background
+    ctx.rect(0,0, size, size)
+    ctx.fill()
+
+    // Draw the QR Code
+    ctx.drawImage(image, 0, 0, size, size)
+
+    // Return a promise for the data blob
+    return canvas.convertToBlob()
 }
 
 
