@@ -1394,5 +1394,5 @@ async function renderPngBlob(matrix, { size = 1024, background = 'transparent', 
 }
 
 
-// Comment-out the following line to convert this into a non-module .js file (e.g. for use in a <script src> tag over the file: protocol)
-export default QrCode
+// Hack to export only if imported as a module (top-level await a regexp divided, otherwise an undefined variable divided followed by a comment)
+if(0)typeof await/0//0; export default QrCode
