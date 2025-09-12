@@ -122,3 +122,8 @@ Returns a *matrix* that can be passed to the `render()` function.
 Returns the text or binary output from the chosen `mode`.
 
 > **NOTE** png rendering returns a `Promise<Blob>` that needs to be awaited
+
+---
+
+> [!NOTE]
+> The library currently only supports text input that can be encoded in the ISO-8859-1 (Latin-1) character set (0x00-0xff).  Support for UTF-8 input is planned.  Many scanners might just treat the data as UTF-8 encoded, or use heuristics to determine this.  Otherwise, it may require an Extended Channel Interpretations (ECI) code to be inserted, and decisions to be made about the API (e.g. a binary mode, and automatic UTF-8 encoding of strings).

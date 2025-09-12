@@ -154,8 +154,21 @@ class Segment {
     };
     static MODE_BITS = 4;    // 4-bits to indicate mode
     static MODE_INDICATOR_TERMINATOR = 0x0;  // 0b0000
-    // ECI Assignment Numbers
-    //static ECI_UTF8 = 26; // "\000026" UTF8 - ISO/IEC 10646 UTF-8 encoding
+
+    // ECI (Extended Character Interpretations) Assignment Numbers
+    //static ECI_ISO8859_1 = 3; // "000003" representing ISO/IEC 8859-1 (default)
+    //static ECI_UTF8 = 26; // "000026" UTF8 - ISO/IEC 10646 UTF-8 encoding
+    //
+    // To use ECI (ISO/IEC 15424:2025), e.g. for UTF-8, use the prefix: "]Q2\E000026" ???
+    //
+    //   ']'  // The first character must be the symbology identifier flag character: '[' (ASCII 93)
+    //   'Q'  // The second character must be the code character: 'Q' for QR Code symbology
+    //   '2'  // The third character is the modifier character for the symbology ('2' for no structured append in QR Codes?)
+    //   'E'  // The ECI designator flag character: 'E' (ASCII 69)
+    //   '000026' // The ECI Assignment Number, encoded as an ISO/IEC 646 (ASCII) string of digits with a minimum length of 6 characters, and prefixed by the escape character "\" (ASCII 92)
+    //
+    // ...and then any interstitial characters "\" must be escaped as "\\".
+    //
 
 
     constructor(text) {

@@ -1,221 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="icon" href="data:;base64,=">
-	<title>QR Code JS Demo</title>
-	<style type="text/css">
-	html, body {
-		font-family: sans-serif;
-	}
-	.controls {
-		margin: 1em 0;
-	}
-	#text {
-		width: 90%;
-	}
-	#output_text {
-		cursor: copy;
-		font-family: monospace;
-		-webkit-font-smoothing: none;
-		font-smooth: never;
-		text-rendering: optimizeSpeed;
-		line-height: 1.1;
-		white-space: nowrap;
-	}
-	/* Fix for monospace fonts where the space is not the same width as the block characters */
-	#output_text span {
-		display: inline-block;
-		width: 1ch;
-	}
-	#output_img, #output_svg {
-		cursor: copy;
-	}
-	#output_img img, #output_svg svg {
-		width: 50vw;
-		max-width: 75vmin;
-	}
-	</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:;base64,=">
+  <title>QR Code JS</title>
+  <style type="text/css">
+  html, body {
+    font-family: sans-serif;
+  }
+  .controls {
+    margin: 1em 0;
+  }
+  textarea {
+    resize: both;
+    field-sizing: content;
+    vertical-align: top;
+    min-width: 80%;
+  }
+  summary {
+    cursor: pointer;
+  }
+  li {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+  .hidden {
+    display: none;
+  }
+  #text {
+    width: 90%;
+    border-radius: 0.5em;
+  }
+  #output_text {
+    cursor: copy;
+    font-family: monospace;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  /* Fix for monospace fonts where the space is not the same width as the block characters */
+  #output_text span {
+    display: inline-block;
+    width: 1ch;
+  }
+  #output_img, #output_svg {
+    cursor: copy;
+  }
+  #output_img img, #output_svg svg {
+    width: 50vw;
+    max-width: 75vmin;
+  }
+  #caution-input, #error {
+    background: #ffffdd;
+    border: 1px solid #cccc00;
+    padding: 0.5em;
+    margin: 1em 0;
+    border-radius: 0.5em;
+  }
+  #error {
+    background: #ffdddd;
+    border: 1px solid #cc0000;
+  }
+  #caution-input::before {
+    content: "⚠️ ";
+  }
+  #error::before {
+    content: "❗ ";
+  }
+  </style>
 </head>
 <body>
-<h1>QR Code JS Demo</h1>
+<h1>QR Code JS</h1>
 
 <ul>
-  <li>Generate a QR Code for your input.</li>
+  <li>Generate a QR Code for any input.</li>
+  <li>Data stays only in your browser and is not sent anywhere else.</li>
   <li>Open source repository: <a href="https://github.com/danielgjackson/qrcodejs">github.com/danielgjackson/qrcodejs</a></li>
 </ul>
-	
+
 <div class="controls">
-	<label>Error correction level:
-		<select id="ecl">
-			<option value="L+" selected>Low, or better for same size (~7%+)</option>
-			<option value="M+">Medium, or better for same size (~15%+)</option>
-			<option value="Q+">Quartile, or better for same size (~25%+)</option>
-			<option value="H">High (~30%)</option>
-			<option value="Q">Quartile (~25%)</option>
-			<option value="M">Medium (~15%)</option>
-			<option value="L">Low (~7%)</option>
-		</select>
-	</label>
-	(increases complexity, but more robust to damage or occlusion).
+  <label><input type="checkbox" id="rounded" checked>Rounded.</label>
+  <label>Error correction level:
+    <select id="ecl">
+      <option value="L+" selected>Low, or better for same size (~7%+)</option>
+      <option value="M+">Medium, or better for same size (~15%+)</option>
+      <option value="Q+">Quartile, or better for same size (~25%+)</option>
+      <option value="H">High (~30%)</option>
+      <option value="Q">Quartile (~25%)</option>
+      <option value="M">Medium (~15%)</option>
+      <option value="L">Low (~7%)</option>
+    </select>
+  </label>
+</div>
+
+<div id="caution-input" class="hidden">
+  <strong>Caution:</strong> Please double-check the input as it may unintentionally contain: multiple lines, or leading/trailing whitespace, or is an improperly formatted URL.
+</div>
+
+<div id="error" class="hidden">
+  <strong>Error:</strong> <span id="error_message">-</span>
 </div>
 
 <div class="controls">
-	<label>Text: <input type="text" id="text" placeholder="https://example.com"></label>
+  <label>
+    Text:
+    <textarea type="text" id="text" wrap="soft" rows="4" autofocus placeholder="https://example.com"></textarea>
+  </label>
 </div>
 
-<details>
-<summary>Text</summary>
-<div id="output_text">
--
+<details name="qrcode" open>
+<summary>Image &lt;svg&gt;</summary>
+<div id="output_svg">
+  <svg></svg>
 </div>
 </details>
 
-<details>
+<details name="qrcode">
 <summary>Image &lt;img&gt;</summary>
 <div id="output_img">
   <img src="" alt="">
 </div>
 </details>
 
-<details open>
-<summary>Image &lt;svg&gt;</summary>
-<div>
-	<label><input type="checkbox" id="rounded" checked>Rounded</label>
-</div>
-<div id="output_svg">
-  <svg></svg>
+<details name="qrcode">
+<summary>Text</summary>
+<div id="output_text">
+-
 </div>
 </details>
 
 <ul>
   <li>Simpler codes are easier to scan:
-	<ul>
-		<li>Keep the input as short as possible.</li>
-		<li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but probably best not to rely on this.</li>
-		<li>All upper-case alphanumeric (with some, e.g. URL, symbols allowed) is more compat than mixed-case, but be careful that any path part may be case sensitive, and some readers may not like the protocol in capital letters.</li>
-	</ul>
+    <ul>
+      <li>Keep the input as short as possible.</li>
+      <li>If using a URL with a common top-level-domain (such as <code>.com</code>), some readers work without an initial <code>http://</code> or <code>https://</code>, but it's probably best not to rely on this.</li>
+      <li>All upper-case alphanumeric (with some, e.g. URL, symbols allowed) is more compact than mixed-case, but be careful that any path part may be case sensitive, and some readers may not like the protocol in capital letters.</li>
+      <li>Lower error correction levels can decrease complexity, but may be more susceptible to damage or occlusion.</li>
+    </ul>
   </li>
   <li>Always include a written alternative for the URL.</li>
   <li>Always place the QR code on a 'quiet' area: light on a standard code (if the code is inverted, it should be placed on a dark background).</li>
   <li>For WiFi QR codes, use the format: <code>WIFI:S:my_ssid;T:WPA;P:my_passphrase;;</code></li>
 </ul>
 
-<script type="module">
-import QrCode from './qrcode.mjs';
+<!-- Don't use as a module here so that this demo page can work over the file: protocol -->
+<script src="./qrcode.mjs"></script>
+<script> <!-- type="module" -->
+//import QrCode from './qrcode.mjs';
 
 function renderHtml(matrix) {
-	// '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
-	// Figure space: '\u{2007}'
-	const renderOptions = {
-		segments: ['<span>&nbsp;</span>', '<span>▀</span>', '<span>▄</span>', '<span>█</span>'],
-		sep: '<br>',
-	};
-	return QrCode.render('medium', matrix, renderOptions);
+  // '▀', '▄', '█' // '\u{0020}' space, '\u{2580}' upper half block, '\u{2584}' lower half block, '\u{2588}' block
+  // Figure space: '\u{2007}'
+  const renderOptions = {
+    segments: ['<span>&nbsp;</span>', '<span>▀</span>', '<span>▄</span>', '<span>█</span>'],
+    sep: '<br>',
+  };
+  return QrCode.render('medium', matrix, renderOptions);
 }
 
 function focus() {
-	document.querySelector('#text').select();
+  document.querySelector('#text').select();
 }
 
 function change() {
-	const input = document.querySelector('#text').value;
-	let text;
-	let svg;
-	try {
-		const ecl = document.querySelector('#ecl').value;
-		const qrOptions = {
-			errorCorrectionLevel: QrCode.ErrorCorrectionLevel[ecl[0]],
-			optimizeEcc: ecl.includes('+'),
-		};
-		const matrix = QrCode.generate(input, qrOptions);
-		text = renderHtml(matrix);
-		const renderOptions = {
-			color: 'currentColor',
-			moduleRound: null,      // 1.0 looks nice
-			finderRound: null,      // 0.5 looks nice
-			alignmentRound: null,
-			white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
-			moduleSize: 1,
-		};
+  let errorMessage = null;
 
-		if (document.querySelector('#rounded').checked) {
-			renderOptions.moduleRound = 1.0;
-			renderOptions.finderRound = 0.5;
-		}
+  const input = document.querySelector('#text').value;
+  //console.log('Input:', JSON.stringify(input));
 
-		svg = QrCode.render('svg', matrix, renderOptions);
-	} catch (e) {
-		text = 'Error: ' + e;
-	}
-	const textElement = document.querySelector('#output_text');
-	const imgElement = document.querySelector('#output_img img');
-	const svgElement = document.querySelector('#output_svg svg');
-	textElement.innerHTML = text;
-	imgElement.src = 'data:image/svg+xml,' + encodeURIComponent(svg);
-	imgElement.alt = input;
-	svgElement.alt = input;
-	if (svg) {
-		svgElement.outerHTML = svg;
-	} else {
-		svgElement.innerHTML = svg;
-	}
+  // Check for possible ill-formed input
+  const trimmedInput = input.trim();
+  const whitespace = input.length != trimmedInput.length;
+  const multipleLines = trimmedInput.includes('\n');
+  const startsWithHttp = trimmedInput.toLowerCase().startsWith('http:') || trimmedInput.toLowerCase().startsWith('https:');
+  const startsWithWiFi = trimmedInput.toUpperCase().startsWith('WIFI:');
+  const nonUrlCharacters = trimmedInput.match(/[^a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]/);
+  let caution = (startsWithHttp || startsWithWiFi) && (whitespace || multipleLines);
+  if (startsWithHttp && URL.canParse && !URL.canParse(trimmedInput)) {
+    caution = true;
+  }
+  document.querySelector('#caution-input').classList.toggle('hidden', !caution);
+
+  let text = '';
+  let svg;
+  try {
+    const ecl = document.querySelector('#ecl').value;
+    const qrOptions = {
+      errorCorrectionLevel: QrCode.ErrorCorrectionLevel[ecl[0]],
+      optimizeEcc: ecl.includes('+'),
+    };
+    const matrix = QrCode.generate(input, qrOptions);
+    text = renderHtml(matrix);
+    const renderOptions = {
+      color: 'currentColor',
+      moduleRound: null,      // 1.0 looks nice
+      finderRound: null,      // 0.5 looks nice
+      alignmentRound: null,
+      white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
+      moduleSize: 1,
+    };
+
+    if (document.querySelector('#rounded').checked) {
+      renderOptions.moduleRound = 1.0;
+      renderOptions.finderRound = 0.5;
+    }
+
+    svg = QrCode.render('svg', matrix, renderOptions);
+  } catch (e) {
+    let message = JSON.stringify(e);
+
+    // Check for currently unsupported input
+    const currentlyUnsupportedInput = [...input].some(c => c.charCodeAt(0) < 0x00 || c.charCodeAt(0) > 0xff);
+    if (currentlyUnsupportedInput) {
+      message += ' -- Note: the input contains characters outside the ISO-8859-1 (Latin-1) range (0x00-0xff), and this is currently unsupported.';
+    }
+    
+    console.error('Error: ' + message);
+    errorMessage = message;
+  }
+  const textElement = document.querySelector('#output_text');
+  const imgElement = document.querySelector('#output_img img');
+  const svgElement = document.querySelector('#output_svg svg');
+  textElement.innerHTML = text;
+  imgElement.src = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  imgElement.alt = input;
+  svgElement.alt = input;
+  if (svg) {
+    svgElement.outerHTML = svg;
+  } else {
+    svgElement.innerHTML = svg;
+  }
+
+  if (errorMessage) {
+    document.querySelector('#error').classList.remove('hidden');
+    document.querySelector('#error_message').innerText = errorMessage;
+  } else {
+    document.querySelector('#error').classList.add('hidden');
+    document.querySelector('#error_message').innerText = '-';
+  }
 }
 
 function copyMultiLinePlainTextToClipboard(text) {
-	const temp = document.createElement('textarea');
-	temp.value = text;
-	document.body.appendChild(temp);
-	temp.select();
-	document.execCommand('copy');
-	document.body.removeChild(temp);
+  const temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
 }
 
 function safeFilename(text) {
-	text = text.replace(/^https?:\/\//i, '');
-	text = text.replaceAll(/[^a-zA-Z0-9_.-]/g, '_').toLowerCase();
-	text = text.replaceAll(/\.+/g, '.');
-	text = text.replaceAll(/_+/g, '_');
-	return text;
+  text = text.replace(/^https?:\/\//i, '');
+  text = text.replaceAll(/[^a-zA-Z0-9_.-]/g, '_').toLowerCase();
+  text = text.replaceAll(/\.+/g, '.');
+  text = text.replaceAll(/_+/g, '_');
+  return text;
 }
 
 async function dataUriToBlob(dataUri) {
-	try {
-		return await (await fetch(dataUri)).blob();
-	} catch (e) {
-		const protocolParts = dataUri.split(':');
-		if (protocolParts[0] != 'data') throw new Error('Invalid data URI');
-		const nonProtocol = protocolParts.slice(1).join(':');
-		const dataParts = nonProtocol.split(',');
-		const metaParts = dataParts[0].split(';');
-		const type = metaParts[0];
-		const encoding = metaParts[1];
-		const rawData = dataParts.slice(1).join('');
-        const data = encoding == 'base64' ? atob(rawData) : decodeURIComponent(rawData);
-		const bytes = [];
-        for (let i = 0; i < binary.length; i++) bytes.push(data.charCodeAt(i));
-        return new Blob([new Uint8Array(bytes)], { type });
-	}
+  try {
+    return await (await fetch(dataUri)).blob();
+  } catch (e) {
+    const protocolParts = dataUri.split(':');
+    if (protocolParts[0] != 'data') throw new Error('Invalid data URI');
+    const nonProtocol = protocolParts.slice(1).join(':');
+    const dataParts = nonProtocol.split(',');
+    const metaParts = dataParts[0].split(';');
+    const type = metaParts[0];
+    const encoding = metaParts[1];
+    const rawData = dataParts.slice(1).join('');
+    const data = encoding == 'base64' ? atob(rawData) : decodeURIComponent(rawData);
+    const bytes = [];
+    for (let i = 0; i < binary.length; i++) bytes.push(data.charCodeAt(i));
+    return new Blob([new Uint8Array(bytes)], { type });
+  }
 }
 
 async function rasterizeImageToBlob(src, type = 'image/png') {
-	const img = new Image();
-  	const ctx = document.createElement('CANVAS').getContext('2d');
-	img.crossOrigin = '';
-	img.src = src;
-	return new Promise(resolve => {
-		img.onload = () => {
-			ctx.canvas.width = img.naturalWidth;
-			ctx.canvas.height = img.naturalHeight;
-			ctx.drawImage(img, 0, 0);
-			ctx.canvas.toBlob((blob) => resolve(blob), type);
-		};
-	});
+  const img = new Image();
+  const ctx = document.createElement('CANVAS').getContext('2d');
+  img.crossOrigin = '';
+  img.src = src;
+  return new Promise(resolve => {
+    img.onload = () => {
+      ctx.canvas.width = img.naturalWidth;
+      ctx.canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0);
+      ctx.canvas.toBlob((blob) => resolve(blob), type);
+    };
+  });
 }
 
 function svgToBlob(svg, type = 'image/svg+xml') {
-	return new Blob([svg], { type });
+  return new Blob([svg], { type });
 }
 
 function copyBlobToClipboard(blob) {
@@ -226,133 +306,133 @@ function copyBlobToClipboard(blob) {
 }
 
 function downloadBlob(blob, filename = null, type = null) { // 'application/octet-stream'
-	if (!(blob instanceof Blob)) { blob = new Blob([blob], type ? { type } : undefined); }
-	const elem = window.document.createElement('A');
-	elem.href = window.URL.createObjectURL(blob);
-	if (filename) elem.download = filename;
-	if (type) elem.type = type;
-	document.body.appendChild(elem);
-	elem.click();
-	document.body.removeChild(elem);
+  if (!(blob instanceof Blob)) { blob = new Blob([blob], type ? { type } : undefined); }
+  const elem = window.document.createElement('A');
+  elem.href = window.URL.createObjectURL(blob);
+  if (filename) elem.download = filename;
+  if (type) elem.type = type;
+  document.body.appendChild(elem);
+  elem.click();
+  document.body.removeChild(elem);
 }
 
 async function copySvgToClipboard(svg, imgSrc, element) {
-	// Try to copy the SVG as an image to the clipboard
-	try {
-		if ('write' in navigator.clipboard && navigator.permissions) {
-			const permissionResult = await navigator.permissions.query({ name: 'clipboard-write' });
-			if (permissionResult.state === 'granted') {
-				const svgBlob = svgToBlob(svg);
-				const pngBlob = await rasterizeImageToBlob(imgSrc);
-				const htmlBlob = svgToBlob(svg, 'text/html');
-				const textBlob = svgToBlob(svg, 'text/plain');
+  // Try to copy the SVG as an image to the clipboard
+  try {
+    if ('write' in navigator.clipboard && navigator.permissions) {
+      const permissionResult = await navigator.permissions.query({ name: 'clipboard-write' });
+      if (permissionResult.state === 'granted') {
+        const svgBlob = svgToBlob(svg);
+        const pngBlob = await rasterizeImageToBlob(imgSrc);
+        const htmlBlob = svgToBlob(svg, 'text/html');
+        const textBlob = svgToBlob(svg, 'text/plain');
 
-console.log('COPY: clipboard.write(ClipboardItem) -- SVG')
-				try {
-					const item = new ClipboardItem({
-						'image/svg+xml': svgBlob,
-						//'image/png': pngBlob,
-						//'text/html': htmlBlob,
-						//'text/plain': textBlob,
-					});
-					await navigator.clipboard.write([item]);
-					return true;
-				} catch (e) {
-					console.error(e.name, e.message);
-				}
+        console.log('COPY: clipboard.write(ClipboardItem) -- SVG')
+        try {
+          const item = new ClipboardItem({
+            'image/svg+xml': svgBlob,
+            //'image/png': pngBlob,
+            //'text/html': htmlBlob,
+            //'text/plain': textBlob,
+          });
+          await navigator.clipboard.write([item]);
+          return true;
+        } catch (e) {
+          console.error(e.name, e.message);
+        }
 
-console.log('COPY: clipboard.write(ClipboardItem) -- PNG')
-				try {
-					const item = new ClipboardItem({
-						//'image/svg+xml': svgBlob,
-						'image/png': pngBlob,
-						//'text/html': htmlBlob,
-						//'text/plain': textBlob,
-					});
-					await navigator.clipboard.write([item]);
-					return true;
-				} catch (e) {
-					console.error(e.name, e.message);
-				}
+        console.log('COPY: clipboard.write(ClipboardItem) -- PNG')
+        try {
+          const item = new ClipboardItem({
+            //'image/svg+xml': svgBlob,
+            'image/png': pngBlob,
+            //'text/html': htmlBlob,
+            //'text/plain': textBlob,
+          });
+          await navigator.clipboard.write([item]);
+          return true;
+        } catch (e) {
+          console.error(e.name, e.message);
+        }
 
-				console.log('COPY: clipboard.write(ClipboardItem) -- HTML')
-				try {
-					const item = new ClipboardItem({
-						//'image/svg+xml': svgBlob,
-						//'image/png': pngBlob,
-						'text/html': htmlBlob,
-						'text/plain': textBlob,
-					});
-					await navigator.clipboard.write([item]);
-					return true;
-				} catch (e) {
-					console.error(e.name, e.message);
-				}
+        console.log('COPY: clipboard.write(ClipboardItem) -- HTML')
+        try {
+          const item = new ClipboardItem({
+            //'image/svg+xml': svgBlob,
+            //'image/png': pngBlob,
+            'text/html': htmlBlob,
+            'text/plain': textBlob,
+          });
+          await navigator.clipboard.write([item]);
+          return true;
+        } catch (e) {
+          console.error(e.name, e.message);
+        }
 
-			}
-		}
-	} catch (e) {
-		console.error(e.name, e.message);
-	}
+      }
+    }
+  } catch (e) {
+    console.error(e.name, e.message);
+  }
 
-	try {
-		// Fallback: this tries to copy the selected range around the image as HTML
-console.log('COPY: execCommand(copy) range')
-		window.getSelection().removeAllRanges();
-		const range = document.createRange();
-		range.selectNode(element);
-		window.getSelection().addRange(range);
-		document.execCommand('copy');
-		window.getSelection().removeAllRanges();
-		return true;
-	} catch (e) {
-		console.error(e.name, e.message);
-	}
+  try {
+    // Fallback: this tries to copy the selected range around the image as HTML
+    console.log('COPY: execCommand(copy) range')
+    window.getSelection().removeAllRanges();
+    const range = document.createRange();
+    range.selectNode(element);
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    return true;
+  } catch (e) {
+    console.error(e.name, e.message);
+  }
 
-	// Fall back to copying source
-	try {
-console.log('COPY: writeText source')
-		await navigator.clipboard.writeText(svg);
-		return true;
-	} catch (e) {
-		console.error(e.name, e.message);
-	}
+  // Fall back to copying source
+  try {
+    console.log('COPY: writeText source')
+    await navigator.clipboard.writeText(svg);
+    return true;
+  } catch (e) {
+    console.error(e.name, e.message);
+  }
 
-	return false;
+  return false;
 }
 
 function click_text() {
-	const text = document.querySelector('#output_text').innerText;
-	copyMultiLinePlainTextToClipboard(text);
-	document.querySelector('#text').focus();
+  const text = document.querySelector('#output_text').innerText;
+  copyMultiLinePlainTextToClipboard(text);
+  document.querySelector('#text').focus();
 }
 
 async function click_img() {
-	const element = document.querySelector('#output_img img');
-	const svg = decodeURIComponent(element.src.split(',').slice(1).join(''));
-	//const imgSrc = element.src;
-	//copySvgToClipboard(svg, imgSrc, element);
-	downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
+  const element = document.querySelector('#output_img img');
+  const svg = decodeURIComponent(element.src.split(',').slice(1).join(''));
+  //const imgSrc = element.src;
+  //copySvgToClipboard(svg, imgSrc, element);
+  downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
 }
 
 function click_svg() {
-	const element = document.querySelector('#output_svg svg');
-	const svg = element.outerHTML;
-	//const imgSrc = 'data:image/svg+xml,' + encodeURIComponent(svg);
-	//copySvgToClipboard(svg, imgSrc, element);
-	downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
+  const element = document.querySelector('#output_svg svg');
+  const svg = element.outerHTML;
+  //const imgSrc = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  //copySvgToClipboard(svg, imgSrc, element);
+  downloadBlob(svgToBlob(svg), safeFilename(document.querySelector('#text').value) + '.svg');
 }
 
 function start() {
-	document.querySelector('#text').addEventListener('focus', focus);
-	document.querySelector('#text').addEventListener('input', change);
-	document.querySelector('#ecl').addEventListener('change', change);
-	document.querySelector('#rounded').addEventListener('change', change);
-	document.querySelector('#output_text').addEventListener('click', click_text);
-	document.querySelector('#output_img img').addEventListener('click', click_img);
-	document.querySelector('#output_svg').addEventListener('click', click_svg);
-	document.querySelector('#text').focus();
-	change();
+  document.querySelector('#text').addEventListener('focus', focus);
+  document.querySelector('#text').addEventListener('input', change);
+  document.querySelector('#ecl').addEventListener('change', change);
+  document.querySelector('#rounded').addEventListener('change', change);
+  document.querySelector('#output_text').addEventListener('click', click_text);
+  document.querySelector('#output_img img').addEventListener('click', click_img);
+  document.querySelector('#output_svg').addEventListener('click', click_svg);
+  document.querySelector('#text').focus();
+  change();
 }
 
 window.addEventListener('DOMContentLoaded', start);
