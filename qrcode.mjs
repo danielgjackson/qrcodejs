@@ -1,5 +1,41 @@
 // QR Code Generator
-// Dan Jackson, 2020
+// Dan Jackson, 2020-2025
+
+
+// The library currently only supports text input that can be encoded in the ISO-8859-1 (Latin-1) character set (0x00-0xff).  
+// Support for UTF-8 is planned however, note that:
+//
+//   * The JS API may have to either detect when strings require UTF-8 encoding and/or accept byte arrays and an option to specify an ECI mode.
+//   * Not all QR code readers support the ECI mode bits (below)
+//   * ASCII may be sufficient for several applications, e.g. URL-encoding in URLs without IDN.
+//   * Some readers may have heuristics to recognize UTF-8 even without the ECI mode.
+//
+//
+// Extended Character Interpretations (ECI)
+//
+// Extended Channel Interpretation (ECI) mode allows for an alternative interpretation
+// of byte values, e.g. as another character set such as UTF-8.
+// 
+// Processed ECI strings designate this with an initial backslash (0x5C) "\" followed by 
+// a six-digit ECI assignment number (using '0'-'9'), and with any literal backslashes 
+// escaped with an additional backslash (i.e. "\" -> "\\").
+//
+// In a QR Code, this is encoded as an initial ECI mode indicator 0111, followed by the 
+// ECI assignment number encoded as 1, 2, or 3 bytes (depending on value range), then one 
+// or more segments encoding the bytes as with a standard modes.
+//
+// ECI assignment values are be encoded as follows (prefer to use the smallest encoding?)
+// where 'b' is the bit value for the assignment value (MSB first):
+//
+//   000000-000127     7 bits -> 1 byte     0bbbbbbb
+//   000000-016383    14 bits -> 2 bytes    10bbbbbb bbbbbbbb
+//   000000-999999    21 bits -> 3 bytes    110bbbbb bbbbbbbb bbbbbbbb
+//
+// ECI assignments (partial list):
+//   ECI_ISO8859_1 = 3  "\000003"  representing ISO/IEC 8859-1 (default for QR code, can be omitted, bits: 00000011)
+//   ECI_UTF8 = 26      "\000026"  representing ISO/IEC 10646 UTF-8 encoding (bits: 00011010)
+//
+//
 
 
 // --- Bit Buffer Writing ---
@@ -154,22 +190,6 @@ class Segment {
     };
     static MODE_BITS = 4;    // 4-bits to indicate mode
     static MODE_INDICATOR_TERMINATOR = 0x0;  // 0b0000
-
-    // ECI (Extended Character Interpretations) Assignment Numbers
-    //static ECI_ISO8859_1 = 3; // "000003" representing ISO/IEC 8859-1 (default)
-    //static ECI_UTF8 = 26; // "000026" UTF8 - ISO/IEC 10646 UTF-8 encoding
-    //
-    // To use ECI (ISO/IEC 15424:2025), e.g. for UTF-8, use the prefix: "]Q2\E000026" ???
-    //
-    //   ']'  // The first character must be the symbology identifier flag character: '[' (ASCII 93)
-    //   'Q'  // The second character must be the code character: 'Q' for QR Code symbology
-    //   '2'  // The third character is the modifier character for the symbology ('2' for no structured append in QR Codes?)
-    //   'E'  // The ECI designator flag character: 'E' (ASCII 69)
-    //   '000026' // The ECI Assignment Number, encoded as an ISO/IEC 646 (ASCII) string of digits with a minimum length of 6 characters, and prefixed by the escape character "\" (ASCII 92)
-    //
-    // ...and then any interstitial characters "\" must be escaped as "\\".
-    //
-
 
     constructor(text) {
         this.text = text;
