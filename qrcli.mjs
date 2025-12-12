@@ -38,6 +38,12 @@ for (let i = 0; i < args.length; i++) {
         else if (arg == '--svg-round') { renderOptions.moduleRound = parseFloat(args[++i]); }
         else if (arg == '--svg-finder-round') { renderOptions.finderRound = parseFloat(args[++i]); }
         else if (arg == '--svg-alignment-round') { renderOptions.alignmentRound = parseFloat(args[++i]); }
+        else if (arg == '--svg-timing-point') { renderOptions.timingSize = parseFloat(args[++i]); }
+        else if (arg == '--svg-timing-round') { renderOptions.timingRound = parseFloat(args[++i]); }
+        else if (arg == '--svg-color') { renderOptions.color = args[++i]; }
+        else if (arg == '--svg-white') { renderOptions.white = args[++i]; }
+        else if (arg == '--svg-finder-size') { renderOptions.finderSize = parseFloat(args[++i]); }
+        else if (arg == '--svg-image-size') { renderOptions.imageSize = parseFloat(args[++i]); }
         // Alpha options
         else if (arg == '--alpha') { renderOptions.alpha = true; }
         else if (arg == '--bmp-alpha') { renderOptions.alpha = true; }

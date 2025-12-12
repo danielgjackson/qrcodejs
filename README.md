@@ -126,4 +126,17 @@ Returns the text or binary output from the chosen `mode`.
 ---
 
 > [!NOTE]
-> The library currently only supports text input that can be encoded in the ISO-8859-1 (Latin-1) character set (0x00-0xff).  Support for UTF-8 input is planned.  Many scanners might just treat the data as UTF-8 encoded, or use heuristics to determine this.  Otherwise, it may require an Extended Channel Interpretations (ECI) code to be inserted, and decisions to be made about the API (e.g. a binary mode, and automatic UTF-8 encoding of strings).
+> The library currently only supports text input that can be encoded in the ISO-8859-1 (Latin-1) character set (0x00-0xff).  Support for UTF-8 input is planned.  Many scanners might just treat the data as UTF-8 encoded, or use heuristics to determine this.  Otherwise, it may require an Extended Channel Interpretations (ECI) code to be inserted, and decisions to be made about the API (e.g a binary mode, and automatic UTF-8 encoding of strings).
+
+<!--
+
+```bash
+# brew install imagemagick
+# brew install --cask Inkscape
+# sudo ln -s /Applications/Inkscape.app/Contents/MacOS/inkscape /usr/local/bin/inkscape  ## Use '~/Applications' for a local-user install
+
+node ./qrcli.mjs --svg-white white --output:svg --svg-point 0.7 --svg-round 1 --svg-finder-round 0.25 --svg-timing-round 0.5 --svg-timing-point 1 --svg-color black --svg-finder-size 1 --scale 1 --svg-image-size 512 --file test.svg '1234567890' && magick -background none -size 512x512 test.svg -channel A -evaluate multiply 0.7 +channel test.png
+
+```
+
+-->

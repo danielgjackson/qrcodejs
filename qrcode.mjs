@@ -1259,28 +1259,53 @@ function renderSvg(matrix, options) {
         color: 'currentColor',
         moduleRound: null,      // 1.0 looks nice
         finderRound: null,      // 0.5 looks nice
+        finderSize: 1,
         alignmentRound: null,
         white: false,    // Output an element for every module, not just black/dark ones but white/light ones too.
         moduleSize: 1,
+        timingSize: null,
+        timingRound: null,
+        scale: 1,
+        imageSize: null,
     }, options);
     
-    const vbTopLeft = `${-matrix.quiet - options.moduleSize / 2}`;
-    const vbWidthHeight = `${2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1}`;
+    const vbTopLeft = (-matrix.quiet - options.moduleSize / 2) * options.scale;
+    const vbWidthHeight = (2 * (matrix.quiet + options.moduleSize / 2) + matrix.dimension - 1) * options.scale;
+    let imageSize = '';
+    if (options.imageSize != null) {
+        imageSize = ` width="${options.imageSize}" height="${options.imageSize}"`;
+    }
     
     const lines = [];
     lines.push(`<?xml version="1.0"?>`);
     // viewport-fill=\"white\" 
-    lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="${options.color}" viewBox="${vbTopLeft} ${vbTopLeft} ${vbWidthHeight} ${vbWidthHeight}" shape-rendering="crispEdges">`);
+    lines.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="${options.color}" viewBox="${vbTopLeft} ${vbTopLeft} ${vbWidthHeight} ${vbWidthHeight}" shape-rendering="crispEdges"${imageSize}>`);
     lines.push(`<title>${escape(matrix.text)}</title>`);
     //lines.push(`<desc>${escape(matrix.text)}</desc>`);
     lines.push(`<defs>`);
 
     // module data bit (dark)
-    lines.push(`<rect id="b" x="${-options.moduleSize / 2}" y="${-options.moduleSize / 2}" width="${options.moduleSize}" height="${options.moduleSize}" rx="${0.5 * (options.moduleRound || 0) * options.moduleSize}" />`);
+    lines.push(`<rect id="b" x="${options.scale * -options.moduleSize / 2}" y="${options.scale * -options.moduleSize / 2}" width="${options.scale * options.moduleSize}" height="${options.scale * options.moduleSize}" rx="${0.5 * (options.moduleRound || 0) * options.moduleSize * options.scale}" />`);
+
+    if (options.timingRound != null) {
+      // timing pattern module
+      let size = options.timingSize ? options.timingSize : options.moduleSize;
+      lines.push(`<rect id="t" x="${options.scale * -size / 2}" y="${options.scale * -size / 2}" width="${options.scale * size}" height="${options.scale * size}" rx="${0.5 * options.timingRound * size * options.scale}" fill="${options.color}" />`);
+      if (options.white) lines.push(`<rect id="tw" x="${options.scale * -size / 2}" y="${options.scale * -size / 2}" width="${options.scale * size}" height="${options.scale * size}" rx="${0.5 * options.timingRound * size * options.scale}" fill="${options.white}" />`);
+    } else {
+      // Use normal module for timing module
+      lines.push(`<use id="t" xlink:href="#b" />`);
+      if (options.white) lines.push(`<use id="tw" xlink:href="#w" />`);
+    }
 
     // module data bit (light). 
     if (options.white) { // Light modules as a ref to a placeholder empty element
-        lines.push(`<path id="w" d="" visibility="hidden" />`);
+        if (options.white === true) {
+          lines.push(`<path id="w" d="" visibility="hidden" />`);
+        } else {
+          //lines.push(`<use id="w" xlink:href="#b" fill="${options.white}" />`);
+          lines.push(`<rect id="w" x="${options.scale * -options.moduleSize / 2}" y="${options.scale * -options.moduleSize / 2}" width="${options.scale * options.moduleSize}" height="${options.scale * options.moduleSize}" rx="${0.5 * (options.moduleRound || 0) * options.moduleSize * options.scale}" fill="${options.white}" />`);
+        }
     }
 
     // Use one item for the finder marker
@@ -1288,8 +1313,13 @@ function renderSvg(matrix, options) {
         // Hide finder module, use finder part
         lines.push(`<path id="f" d="" visibility="hidden" />`);
         if (options.white) lines.push(`<path id="fw" d="" visibility="hidden" />`);
-        lines.push(`<g id="fc"><rect x="-3" y="-3" width="6" height="6" rx="${3.0 * options.finderRound}" stroke="${options.color}" stroke-width="1" fill="none" /><rect x="-1.5" y="-1.5" width="3" height="3" rx="${1.5 * options.finderRound}" /></g>`);
-        lines.push(`<g id="fc"><rect x="-3" y="-3" width="6" height="6" rx="${3.0 * options.finderRound}" stroke="${options.color}" stroke-width="1" fill="none" /><rect x="-1.5" y="-1.5" width="3" height="3" rx="${1.5 * options.finderRound}" /></g>`);
+        let finderWhiteInner = '';
+        let finderWhiteOuter = '';
+        if (options.white) {
+            finderWhiteInner = `<rect x="${-2 * options.scale}" y="${-2 * options.scale}" width="${4 * options.scale}" height="${4 * options.scale}" rx="${2 * options.finderRound * options.scale}" stroke="${options.white}" stroke-width="${options.finderSize * options.scale}" fill="none" />`;
+            finderWhiteOuter = `<rect x="${-4 * options.scale}" y="${-4 * options.scale}" width="${8 * options.scale}" height="${8 * options.scale}" rx="${4.0 * options.finderRound * options.scale}" stroke="${options.white}" stroke-width="${options.finderSize * options.scale}" fill="none" />`;
+        }
+        lines.push(`<g id="fc">${finderWhiteOuter}<rect x="${-3 * options.scale}" y="${-3 * options.scale}" width="${6 * options.scale}" height="${6 * options.scale}" rx="${3.0 * options.finderRound * options.scale}" stroke="${options.color}" stroke-width="${options.finderSize * options.scale}" fill="none" />${finderWhiteInner}<rect x="${-1.5 * options.scale}" y="${-1.5 * options.scale}" width="${3 * options.scale}" height="${3 * options.scale}" rx="${1.5 * options.finderRound * options.scale}" fill="${options.color}" /></g>`);
     } else {
         // Use normal module for finder module, hide finder part
         lines.push(`<use id="f" xlink:href="#b" />`);
@@ -1302,7 +1332,7 @@ function renderSvg(matrix, options) {
         // Hide alignment module, use alignment part
         lines.push(`<path id="a" d="" visibility="hidden" />`);
         if (options.white) lines.push(`<path id="aw" d="" visibility="hidden" />`);
-        lines.push(`<g id="ac"><rect x="-2" y="-2" width="4" height="4" rx="${2.0 * options.alignmentRound}" stroke="${options.color}" stroke-width="1" fill="none" /><rect x="-0.5" y="-0.5" width="1" height="1" rx="${0.5 * options.alignmentRound}" /></g>`);
+        lines.push(`<g id="ac"><rect x="${-2 * options.scale}" y="${-2 * options.scale}" width="${4 * options.scale}" height="${4 * options.scale}" rx="${2.0 * options.alignmentRound * options.scale}" stroke="${options.color}" stroke-width="${1 * options.scale}" fill="none" /><rect x="${-0.5 * options.scale}" y="${-0.5 * options.scale}" width="${1 * options.scale}" height="${1 * options.scale}" rx="${0.5 * options.alignmentRound * options.scale}" /></g>`);
     } else {
         // Use normal module for alignment module, hide alignment part
         lines.push(`<use id="a" xlink:href="#b" />`);
@@ -1323,9 +1353,10 @@ function renderSvg(matrix, options) {
             // Draw finder/alignment as modules (define to nothing if drawing as whole parts)
             if (mod == 'Fi' || mod == 'FI') { type = bit ? 'f' : 'fw'; }
             else if (mod == 'Al' || mod == 'AL') { type = bit ? 'a' : 'aw'; }
+            else if (mod == 'Ti') { type = bit ? 't' : 'tw'; }
 
             if (bit || options.white) {
-                lines.push(`<use x="${x}" y="${y}" xlink:href="#${type}" />`);
+                lines.push(`<use x="${x * options.scale}" y="${y * options.scale}" xlink:href="#${type}" />`);
             }
         }
     }
@@ -1338,7 +1369,7 @@ function renderSvg(matrix, options) {
             if (mod == 'FI') type = 'fc';
             else if (mod == 'AL') type = 'ac';
             if (type == null) continue;
-            lines.push(`<use x="${x}" y="${y}" xlink:href="#${type}" />`);
+            lines.push(`<use x="${x * options.scale}" y="${y * options.scale}" xlink:href="#${type}" />`);
         }
     }
 
