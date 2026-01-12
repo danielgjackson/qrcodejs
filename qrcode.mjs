@@ -908,6 +908,7 @@ class QrCode {
             'large': renderTextLarge,
             'medium': renderTextMedium,
             'compact': renderTextCompact,
+            'tiny': renderTextTiny,
             'svg': renderSvg,
             'svg-uri': renderSvgUri,
             'bmp': renderBmp,
@@ -1104,6 +1105,48 @@ function renderTextCompact(matrix, options) {
     return lines.join(options.sep);
 }
 
+// This output type requires "BLOCK SEXTANT" codes from "Symbols For Legacy Computing", part of Unicode 13.
+function renderTextTiny(matrix, options) {
+    options = Object.assign({
+        // 🬀🬁🬂🬃🬄🬅🬆🬇🬈🬉🬊🬋🬌🬍🬎🬏🬐🬑🬒🬓🬔🬕🬖🬗🬘🬙🬚🬛🬜🬝🬞🬟🬠🬡🬢🬣🬤🬥🬦🬧🬨🬩🬪🬫🬬🬭🬮🬯🬰🬱🬲🬳🬴🬵🬶🬷🬸🬹🬺🬻
+        segments: [
+                   " ", "\u{01FB00}", "\u{01FB01}", "\u{01FB02}", // 00/00/00, 10/00/00, 01/00/00, 11/00/00, 
+          "\u{01FB03}", "\u{01FB04}", "\u{01FB05}", "\u{01FB06}", // 00/10/00, 10/10/00, 01/10/00, 11/10/00, 
+          "\u{01FB07}", "\u{01FB08}", "\u{01FB09}", "\u{01FB0A}", // 00/01/00, 10/01/00, 01/01/00, 11/01/00, 
+          "\u{01FB0B}", "\u{01FB0C}", "\u{01FB0D}", "\u{01FB0E}", // 00/11/00, 10/11/00, 01/11/00, 11/11/00, 
+          "\u{01FB0F}", "\u{01FB10}", "\u{01FB11}", "\u{01FB12}", // 00/00/10, 10/00/10, 01/00/10, 11/00/10, 
+          "\u{01FB13}",          "▌", "\u{01FB14}", "\u{01FB15}", // 00/10/10, 10/10/10, 01/10/10, 11/10/10, 
+          "\u{01FB16}", "\u{01FB17}", "\u{01FB18}", "\u{01FB19}", // 00/01/10, 10/01/10, 01/01/10, 11/01/10, 
+          "\u{01FB1A}", "\u{01FB1B}", "\u{01FB1C}", "\u{01FB1D}", // 00/11/10, 10/11/10, 01/11/10, 11/11/10, 
+          "\u{01FB1E}", "\u{01FB1F}", "\u{01FB20}", "\u{01FB21}", // 00/00/01, 10/00/01, 01/00/01, 11/00/01, 
+          "\u{01FB22}", "\u{01FB23}", "\u{01FB24}", "\u{01FB25}", // 00/10/01, 10/10/01, 01/10/01, 11/10/01, 
+          "\u{01FB26}", "\u{01FB27}",          "▐", "\u{01FB28}", // 00/01/01, 10/01/01, 01/01/01, 11/01/01, 
+          "\u{01FB29}", "\u{01FB2A}", "\u{01FB2B}", "\u{01FB2C}", // 00/11/01, 10/11/01, 01/11/01, 11/11/01, 
+          "\u{01FB2D}", "\u{01FB2E}", "\u{01FB2F}", "\u{01FB30}", // 00/00/11, 10/00/11, 01/00/11, 11/00/11, 
+          "\u{01FB31}", "\u{01FB32}", "\u{01FB33}", "\u{01FB34}", // 00/10/11, 10/10/11, 01/10/11, 11/10/11, 
+          "\u{01FB35}", "\u{01FB36}", "\u{01FB37}", "\u{01FB38}", // 00/01/11, 10/01/11, 01/01/11, 11/01/11, 
+          "\u{01FB39}", "\u{01FB3A}", "\u{01FB3B}",          "█", // 00/11/11, 10/11/11, 01/11/11, 11/11/11, 
+        ],
+        sep: '\n',
+    }, options);
+    const lines = [];
+    for (let y = -matrix.quiet; y < matrix.dimension + matrix.quiet; y += 3) {
+        const parts = [];
+        for (let x = -matrix.quiet; x < matrix.dimension + matrix.quiet; x += 2) {
+            let value = 0;
+            value |= (matrix.getModule(x, y) ? !matrix.invert : matrix.invert) ? 0x01 : 0x00;
+            value |= (((x + 1 < matrix.dimension) ? matrix.getModule(x + 1, y) : 0) ? !matrix.invert : matrix.invert) ? 0x02 : 0x00;
+            value |= (((y + 1 < matrix.dimension) ? matrix.getModule(x, y + 1) : 0) ? !matrix.invert : matrix.invert) ? 0x04 : 0x00;
+            value |= (((y + 1 < matrix.dimension) && (x + 1 < matrix.dimension) ? matrix.getModule(x + 1, y + 1) : 0) ? !matrix.invert : matrix.invert) ? 0x08 : 0x00;
+            value |= (((y + 2 < matrix.dimension) ? matrix.getModule(x, y + 2) : 0) ? !matrix.invert : matrix.invert) ? 0x10 : 0x00;
+            value |= (((y + 2 < matrix.dimension) && (x + 1 < matrix.dimension) ? matrix.getModule(x + 1, y + 2) : 0) ? !matrix.invert : matrix.invert) ? 0x20 : 0x00;
+            let c = options.segments[value];
+            parts.push(c);
+        }
+        lines.push(parts.join(''));
+    }    
+    return lines.join(options.sep);
+}
 
 function renderSixel(matrix, options) {
     const LINE_HEIGHT = 6;

@@ -78,7 +78,7 @@ export class Matrix {}
 export default class QrCode {
     static generate(data: string, options?: GenerateOptions): Matrix
 
-    static render(mode: 'large' | 'medium' | 'compact', matrix: Matrix, options?: RenderOptions): string
+    static render(mode: 'large' | 'medium' | 'compact' | 'tiny', matrix: Matrix, options?: RenderOptions): string
     static render(mode: 'svg' | 'svg-uri', matrix: Matrix, options?: SvgRenderOptions): string
     static render(mode: 'bmp', matrix: Matrix, options?: BmpRenderOptions): Uint8Array
     static render(mode: 'bmp-uri', matrix: Matrix, options?: BmpRenderOptions): string
